@@ -1,4 +1,4 @@
-test-env/.image-done
+test-env/.*.done
 fresh.tar.gz
 .DS_Store
 .tmp/

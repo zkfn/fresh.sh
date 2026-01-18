@@ -52,6 +52,7 @@ echo "Unpacking..."
 curl -LO ${NVIM_URL}
 rm -rf /opt/${NVIM}
 tar -C /opt -xzf ${NVIM_TAR}
+rm ${NVIM_TAR}
 
 echo "Linking exectuable..."
 ln -sf "/opt/${NVIM}/bin/nvim" /usr/local/bin/nvim
