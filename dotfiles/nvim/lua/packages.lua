@@ -2,6 +2,7 @@ vim.pack.add({
   "https://github.com/tpope/vim-fugitive",
   "https://github.com/folke/which-key.nvim",
   "https://github.com/sindrets/diffview.nvim",
+  "https://github.com/folke/snacks.nvim",
 })
 
 ---Helper to run commands silently
@@ -15,6 +16,114 @@ end
 
 local wk = require("which-key")
 local actions = require("diffview.actions")
+local Snacks = require("snacks")
+
+vim.keymap.set("n", "<leader>gL", function()
+  Snacks.picker.git_log({
+    -- override what <CR> does
+    confirm = function(picker, item)
+      if not item then
+        return
+      end
+
+      -- Snacks' git_log items typically expose the sha as `item.commit`.
+      -- Keep it robust across versions:
+      local sha = item.commit or item.hash or item.oid
+      if not sha and type(item.item) == "table" then
+        sha = item.item.commit or item.item.hash or item.item.oid
+      end
+      if not sha then
+        return
+      end
+
+      picker:close()
+      vim.cmd("DiffviewOpen " .. sha .. "^!")
+    end,
+  })
+end, { desc = "Pick commit (Snacks) -> Diffview" })
+
+require("snacks").setup({
+  bigfile = { enabled = true },
+  indent = { enabled = true },
+  input = { enabled = true },
+  scroll = { enabled = true },
+  gh = {
+    enabled = true,
+  },
+  lazygit = {
+    -- your lazygit configuration comes here
+    -- or leave it empty to use the default settings
+    -- refer to the configuration section below
+  },
+  picker = {
+    enabled = true,
+    sources = {
+      gh_issue = {
+        -- your gh_issue picker configuration comes here
+        -- or leave it empty to use the default settings
+      },
+      gh_pr = {
+        -- your gh_pr picker configuration comes here
+        -- or leave it empty to use the default settings
+      },
+    },
+  },
+})
+
+wk.add({
+  mode = "n",
+  {
+    "<leader>gL",
+    function()
+      Snacks.picker.git_log({
+        confirm = function(picker, item)
+          if not item then
+            return
+          end
+
+          local sha = item.commit or item.hash or item.oid
+          if not sha and type(item.item) == "table" then
+            sha = item.item.commit or item.item.hash or item.item.oid
+          end
+          if not sha then
+            return
+          end
+
+          picker:close()
+          vim.cmd("DiffviewOpen " .. sha .. "^!")
+        end,
+      })
+    end,
+  },
+  {
+    "<leader>gi",
+    function()
+      Snacks.picker.gh_issue()
+    end,
+    desc = "GitHub Issues (open)",
+  },
+  {
+    "<leader>gI",
+    function()
+      Snacks.picker.gh_issue({ state = "all" })
+    end,
+    desc = "GitHub Issues (all)",
+  },
+  {
+    "<leader>gp",
+    function()
+      Snacks.picker.gh_pr()
+    end,
+    desc = "GitHub Pull Requests (open)",
+  },
+  {
+    "<leader>gP",
+    function()
+      Snacks.picker.gh_pr({ state = "all" })
+    end,
+    desc = "GitHub Pull Requests (all)",
+  },
+})
 
 require("diffview").setup({
   view = {
