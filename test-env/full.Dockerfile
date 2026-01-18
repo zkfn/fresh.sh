@@ -1,7 +1,9 @@
 FROM fresh-test-env:base
 
-COPY fresh.tar.gz /tmp/
-RUN mkdir -p /opt/fresh.sh && tar -xzvf /tmp/fresh.tar.gz -C /opt/fresh.sh && rm /tmp/fresh.tar.gz
+RUN cp /opt/fresh.sh/.env.example /opt/fresh.sh/.env
+RUN . /opt/fresh.sh/.env && /opt/fresh.sh/setup/git.sh 2>&1 | tee /tmp/setup-git.log 
 RUN /opt/fresh.sh/installs/nvim.sh 2>&1 | tee /tmp/install-nvim.log 
+
+RUN . /opt/fresh.sh/testing/git-conflict.sh 2>&1 | tee /tmp/testing-git-conflict.log
 
 CMD ["bash"]
