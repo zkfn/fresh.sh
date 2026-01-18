@@ -1,5 +1,3 @@
-#!/bin/zsh
-
 echo "Setting git credentials..."
 git config --global user.name "$GIT_NAME"
 git config --global user.email "$GIT_MAIL"
@@ -16,4 +14,9 @@ git config --global alias.a "add"
 git config --global alias.c "commit"
 git config --global alias.cm "commit -m"
 git config --global alias.unstage "restore --staged"
+
+echo "Setting merge tool..."
+git config --global mergetool.dvnvim.cmd 'nvim -c "DiffviewOpen" '
+git config --global merge.tool dvnvim
+echo "Done!"
 

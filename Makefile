@@ -20,10 +20,10 @@ tar: $(TARNAME)
 build-image: $(TOUCHFILE)
 
 
-$(TARNAME): testing/ $(INSTALL_TARS) $(SETUP_TARS) .env.example
+$(TARNAME): testing/ dotfiles/ $(INSTALL_TARS) $(SETUP_TARS) .env.example
 	rm -rf $(TAR_TMP_DIR)
 	mkdir -p $(TAR_TMP_DIR)
-	rsync -aR $(INSTALL_TARS) $(SETUP_TARS) .env.example testing/ $(TAR_TMP_DIR)
+	rsync -aR $(INSTALL_TARS) $(SETUP_TARS) .env.example dotfiles/ testing/ $(TAR_TMP_DIR)
 	tar -czvf $(TARNAME) -C $(TAR_TMP_DIR) .
 
 
