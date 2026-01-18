@@ -3,7 +3,21 @@ vim.pack.add({
   "https://github.com/folke/which-key.nvim",
   "https://github.com/sindrets/diffview.nvim",
   "https://github.com/folke/snacks.nvim",
+  "https://github.com/sainnhe/gruvbox-material",
+  "https://github.com/SmiteshP/nvim-navbuddy",
+  "https://github.com/neovim/nvim-lspconfig",
+  "https://github.com/SmiteshP/nvim-navic",
+  "https://github.com/MunifTanjim/nui.nvim",
 })
+
+vim.o.termguicolors = true
+vim.o.background = "dark"
+
+vim.g.gruvbox_material_enable_italic = true
+vim.g.gruvbox_material_background = "soft"
+vim.g.gruvbox_material_better_performance = 1
+
+vim.cmd.colorscheme("gruvbox-material")
 
 ---Helper to run commands silently
 ---@param command string
@@ -20,15 +34,13 @@ local Snacks = require("snacks")
 
 vim.keymap.set("n", "<leader>gL", function()
   Snacks.picker.git_log({
-    -- override what <CR> does
     confirm = function(picker, item)
       if not item then
         return
       end
 
-      -- Snacks' git_log items typically expose the sha as `item.commit`.
-      -- Keep it robust across versions:
       local sha = item.commit or item.hash or item.oid
+
       if not sha and type(item.item) == "table" then
         sha = item.item.commit or item.item.hash or item.item.oid
       end
@@ -42,32 +54,16 @@ vim.keymap.set("n", "<leader>gL", function()
   })
 end, { desc = "Pick commit (Snacks) -> Diffview" })
 
+require("nvim-navbuddy").setup({ lsp = { auto_attach = true } })
+
 require("snacks").setup({
   bigfile = { enabled = true },
   indent = { enabled = true },
   input = { enabled = true },
   scroll = { enabled = true },
-  gh = {
-    enabled = true,
-  },
-  lazygit = {
-    -- your lazygit configuration comes here
-    -- or leave it empty to use the default settings
-    -- refer to the configuration section below
-  },
-  picker = {
-    enabled = true,
-    sources = {
-      gh_issue = {
-        -- your gh_issue picker configuration comes here
-        -- or leave it empty to use the default settings
-      },
-      gh_pr = {
-        -- your gh_pr picker configuration comes here
-        -- or leave it empty to use the default settings
-      },
-    },
-  },
+  gh = { enabled = true },
+  lazygit = { enabled = true },
+  picker = { enabled = true },
 })
 
 wk.add({
@@ -94,6 +90,13 @@ wk.add({
         end,
       })
     end,
+  },
+  {
+    "<leader>bc",
+    cmd(":Navbuddy"),
+    silent = true,
+    noremap = true,
+    desc = "Open Navbuddy ([b]read[c]rumbs)",
   },
   {
     "<leader>gi",
