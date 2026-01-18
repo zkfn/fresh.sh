@@ -6,7 +6,7 @@ fi
 OS="$(uname -s)"
 ARCH="$(uname -m)"
 
-echo "Detected $(OS) / $(ARCH)"
+echo "Detected ${OS} / ${ARCH}"
 
 case "$OS" in
   Linux)
@@ -43,17 +43,17 @@ case "$OS" in
     ;;
 esac
 
-NVIM_TAR="$(NVIM).tar.gz"
+NVIM_TAR="${NVIM}.tar.gz"
 
-echo "Downloading nightly version of $(NVIM_TAR)..."
-NVIM_URL="https://github.com/neovim/neovim/releases/download/nightly/$(NVIM_TAR)"
+echo "Downloading nightly version of ${NVIM_TAR}..."
+NVIM_URL="https://github.com/neovim/neovim/releases/download/nightly/${NVIM_TAR}"
 
 echo "Unpacking..."
-curl -LO $(NVIM_URL)
-rm -rf /opt/$(NVIM)
-tar -C /opt -xzf $(NVIM_TAR)
+curl -LO ${NVIM_URL}
+rm -rf /opt/${NVIM}
+tar -C /opt -xzf ${NVIM_TAR}
 
 echo "Linking exectuable..."
-ln -sf "/opt/$NVIM_DIR/bin/nvim" /usr/local/bin/nvim
+ln -sf "/opt/${NVIM}/bin/nvim" /usr/local/bin/nvim
 
 echo "Done!"

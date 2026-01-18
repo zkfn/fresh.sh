@@ -5,16 +5,15 @@ ENV DEBIAN_FRONTEND=noninteractive
 RUN apt-get update && apt-get install -y --no-install-recommends \
 	bash \
     ca-certificates \
+	curl \
 	gh \
     git \
-    neovim \
     tmux \
     zsh \
  && rm -rf /var/lib/apt/lists/*
 
-COPY . /opt/fresh.sh
-
-RUN chmod +x /opt/fresh.sh/installs/*.sh 
-RUN /opt/fresh.sh/installs/nvim.sh
+COPY fresh.tar.gz /tmp/
+RUN mkdir -p /opt/fresh.sh && tar -xzvf /tmp/fresh.tar.gz -C /opt/fresh.sh && rm /tmp/fresh.tar.gz
+RUN /opt/fresh.sh/installs/nvim.sh 2>&1 > /tmp/install-nvim.log
 
 CMD ["bash"]
