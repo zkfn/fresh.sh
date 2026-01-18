@@ -14,7 +14,7 @@ vim.o.shiftwidth = 4
 -- Dont hide buffers when last window is closed
 vim.o.hidden = true
 
--- Set the leader ey
+-- Set the leader
 vim.g.mapleader = " "
 
 vim.opt.scrolloff = 8
