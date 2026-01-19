@@ -99,6 +99,7 @@ gs.setup({
         { "[g", if_diff("[g", prev_hunk), desc = "Prev hunk" },
 
         { "<leader>gs", stage_hunk, desc = "[S]tage hunk" },
+        { "<leader>gp", gs.preview_hunk(), desc = "[P]review hunk" },
         { "<leader>gr", reset_hunk, desc = "[R]eset hunk" },
         { "<leader>gS", stage_buffer, desc = "[S]tage buffer" },
         { "<leader>gR", reset_buffer, desc = "[R]eset buffer" },
@@ -191,18 +192,11 @@ wk.add({
     desc = "GitHub Issues (all)",
   },
   {
-    "<leader>gp",
+    "<leader>gB",
     function()
-      Snacks.picker.gh_pr()
+      Snacks.picker.git_branches()
     end,
-    desc = "GitHub Pull Requests (open)",
-  },
-  {
-    "<leader>gP",
-    function()
-      Snacks.picker.gh_pr({ state = "all" })
-    end,
-    desc = "GitHub Pull Requests (all)",
+    desc = "Git [B]ranches",
   },
   {
     "<leader>gl",
