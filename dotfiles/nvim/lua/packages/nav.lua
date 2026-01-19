@@ -15,6 +15,13 @@ require("todo-comments").setup({})
 wk.add({
   mode = "n",
   {
+    "<leader>e",
+    function()
+      Snacks.explorer()
+    end,
+    desc = "File Explorer",
+  },
+  {
     "<leader>bc",
     helpers.cmd(":Navbuddy"),
     silent = true,

@@ -125,7 +125,7 @@ gs.setup({
 require("diffview").setup({
   view = {
     default = {
-      layout = "diff2_vertical",
+      layout = "diff2_horizontal",
     },
     merge_tool = {
       layout = "diff4_mixed",
