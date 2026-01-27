@@ -178,6 +178,7 @@ require("snacks").setup({
     trash = true,
   },
   bufdelete = { enabled = true },
+  scratch = { enabled = true },
 
   indent = { enabled = false },
   statuscolumn = { enabled = false },
@@ -198,6 +199,20 @@ wk.add({
       require("persistence").select()
     end,
     desc = "Select session to restore",
+  },
+  {
+    "<leader>.",
+    function()
+      Snacks.scratch()
+    end,
+    desc = "Toggle Scratch Buffer",
+  },
+  {
+    "<leader>S",
+    function()
+      Snacks.scratch.select()
+    end,
+    desc = "Select Scratch Buffer",
   },
 })
 

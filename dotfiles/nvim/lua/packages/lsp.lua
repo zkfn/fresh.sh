@@ -160,10 +160,10 @@ wk.add({ { "<leader>;;", run_linter, desc = "[L]int", mode = "n" } })
 
 require("conform").setup({
   formatters_by_ft = {
-    javascript = { "prettier" },
-    typescript = { "prettier" },
-    javascriptreact = { "prettier" },
-    typescriptreact = { "prettier" },
+    javascript = { "prettier", "biome-organize-imports" },
+    typescript = { "prettier", "biome-organize-imports" },
+    javascriptreact = { "prettier", "biome-organize-imports" },
+    typescriptreact = { "prettier", "biome-organize-imports" },
     json = { "prettier" },
     jsonc = { "prettier" },
     svelte = { "prettier" },

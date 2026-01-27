@@ -206,6 +206,13 @@ wk.add({
     desc = "Search git log (checkout)",
   },
   {
+    "<leader>gw",
+    function()
+      Snacks.lazygit.open()
+    end,
+    desc = "Lazygit open",
+  },
+  {
     "<leader>gL",
     function()
       Snacks.picker.git_log({

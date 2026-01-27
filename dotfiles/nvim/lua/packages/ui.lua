@@ -1,7 +1,11 @@
 vim.pack.add({
   "https://github.com/nvim-lualine/lualine.nvim",
+  "https://github.com/nvim-mini/mini.nvim",
+  "https://github.com/MeanderingProgrammer/render-markdown.nvim",
   { src = "https://github.com/akinsho/bufferline.nvim", tag = "*" },
 })
+
+require("render-markdown").setup({})
 
 local collect = function(from)
   local names = {}
