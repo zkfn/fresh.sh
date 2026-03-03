@@ -45,7 +45,7 @@ esac
 
 NVIM_TAR="${NVIM}.tar.gz"
 
-echo "Downloading nightly version of ${NVIM_TAR}..."
+echo "Downloading nightly version from https://github.com/neovim/neovim/releases/download/nightly/${NVIM_TAR} ..."
 NVIM_URL="https://github.com/neovim/neovim/releases/download/nightly/${NVIM_TAR}"
 
 echo "Unpacking..."
@@ -54,7 +54,7 @@ rm -rf /opt/${NVIM}
 tar -C /opt -xzf ${NVIM_TAR}
 rm ${NVIM_TAR}
 
-echo "Linking exectuable..."
+echo "Linking exectuable /usr/local/bin/nvim -> /opt/${NVIM}/bin/nvim..."
 ln -sf "/opt/${NVIM}/bin/nvim" /usr/local/bin/nvim
 
 echo "Done!"
