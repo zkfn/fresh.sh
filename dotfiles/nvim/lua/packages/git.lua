@@ -99,7 +99,7 @@ gs.setup({
         { "[g", if_diff("[g", prev_hunk), desc = "Prev hunk" },
 
         { "<leader>gs", stage_hunk, desc = "[S]tage hunk" },
-        { "<leader>gp", gs.preview_hunk(), desc = "[P]review hunk" },
+        { "<leader>gp", gs.preview_hunk, desc = "[P]review hunk" },
         { "<leader>gr", reset_hunk, desc = "[R]eset hunk" },
         { "<leader>gS", stage_buffer, desc = "[S]tage buffer" },
         { "<leader>gR", reset_buffer, desc = "[R]eset buffer" },
@@ -211,6 +211,13 @@ wk.add({
       Snacks.lazygit.open()
     end,
     desc = "Lazygit open",
+  },
+  {
+    "<leader>gP",
+    function()
+      Snacks.picker.gh_pr()
+    end,
+    desc = "Browse PRs",
   },
   {
     "<leader>gL",

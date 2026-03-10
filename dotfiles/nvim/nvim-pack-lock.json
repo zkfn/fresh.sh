@@ -12,6 +12,10 @@
       "rev": "655133c3b4c3e5e05ec549b9f8cc2894ac6f51b3",
       "src": "https://github.com/akinsho/bufferline.nvim"
     },
+    "claude-code.nvim": {
+      "rev": "c9a31e51069977edaad9560473b5d031fcc5d38b",
+      "src": "https://github.com/greggh/claude-code.nvim"
+    },
     "cmp-nvim-lsp": {
       "rev": "cbc7b02bb99fae35cb42f514762b89b5126651ef",
       "src": "https://github.com/hrsh7th/cmp-nvim-lsp"

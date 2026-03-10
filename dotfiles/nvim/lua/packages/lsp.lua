@@ -142,9 +142,10 @@ lint.linters_by_ft = {
   typescript = { "eslint_d" },
   typescriptreact = { "eslint_d" },
   svelte = { "eslint_d" },
+  -- go = { "golangcilint" },
 }
 
-local function run_linter(_ev)
+local function run_linter()
   lint.try_lint()
 end
 

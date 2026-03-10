@@ -23,6 +23,9 @@ vim.pack.add({
   -- Comments
   "https://github.com/numToStr/Comment.nvim",
   "https://github.com/JoosepAlviste/nvim-ts-context-commentstring",
+
+  -- Claude
+  "https://github.com/greggh/claude-code.nvim",
 })
 
 vim.g.snacks_animate = false
@@ -35,6 +38,8 @@ vim.g.gruvbox_material_better_performance = 1
 
 vim.cmd.colorscheme("gruvbox-material")
 local wk = require("which-key")
+
+require("claude-code").setup()
 
 -- Indent bank line
 require("ibl").setup()
@@ -55,6 +60,8 @@ treesitter.setup({
     "markdown",
     "markdown_inline",
     "tsx",
+    "python",
+    "go",
     "typescript",
     "javascript",
     "lua",
@@ -71,6 +78,7 @@ local ts_ft = {
   python = true,
   javascript = true,
   typescript = true,
+  prisma = true,
   tsx = true,
   jsx = true,
   html = true,
@@ -84,6 +92,7 @@ local ts_ft = {
   vim = true,
   vimdoc = true,
   markdown = true,
+  go = true,
 }
 
 vim.api.nvim_create_autocmd("FileType", {
