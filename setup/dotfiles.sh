@@ -13,4 +13,7 @@ ln -sf "${FRESH_SH_DIR}/dotfiles/kitty" "${HOME}/.config/kitty"
 echo "Linking starship config..."
 ln -sf "${FRESH_SH_DIR}/dotfiles/starship.toml" "${HOME}/.config/starship.toml"
 
+echo "Linking tmux config..."
+ln -sf "${FRESH_SH_DIR}/dotfiles/tmux/tmux.conf" "${HOME}/.tmux.conf"
+
 echo "Done!"
