@@ -1,0 +1,114 @@
+"$schema" = 'https://starship.rs/config-schema.json'
+
+format = """
+[](bg:bg fg:orange)\
+$time\
+[](bg:orange fg:yellow)\
+$username\
+$conda\
+[](bg:yellow fg:aqua)\
+$directory\
+[](bg:aqua fg:purple)\
+$git_branch$git_status\
+($status) \
+$line_break$character
+"""
+
+palette = "gruvbox_material"
+
+[time]
+disabled = false
+time_format = "%R" # Hour:Minute Format
+style = "bold fg:bg bg:orange"
+format = '[ $time ]($style)'
+
+[username]
+show_always = true
+style_user = "bg:yellow fg:bg"
+style_root = "bg:yellow fg:bg"
+format = '[ $user ]($style)'
+disabled = false
+
+[conda]
+symbol = "󱔎"
+style = "bg:yellow fg:bg"
+format = '[$symbol $environment ]($style)'
+
+[directory]
+style = "bg:aqua fg:bg"
+format = "[ $path ]($style)"
+truncation_length = 1 
+truncation_symbol = "…/"
+
+[git_branch]
+symbol = ""
+style = "bg:purple fg:bg"
+format = '[ $symbol $branch ]($style)'
+
+[git_status]
+style = "bg:purple fg:bg"
+format = '[$all_status$ahead_behind ]($style)'
+
+[status]
+disabled = false
+success_symbol="[](fg:purple bg:bg)"
+symbol="""\
+[](fg:red bg:purple)\
+[ $status ](bold fg:bg bg:red)\
+[](fg:red bg:bg)\
+"""
+format = '$symbol'
+style = "bold fg:red"
+
+[character]
+disabled = false
+success_symbol = '[ *](bold fg:green)'
+error_symbol = '[ *](bold fg:red)'
+vimcmd_symbol = '[ *](bold fg:green)'
+vimcmd_replace_one_symbol = '[ *](bold fg:purple)'
+vimcmd_replace_symbol = '[ *](bold fg:purple)'
+vimcmd_visual_symbol = '[ *](bold fg:yellow)'
+
+[palettes.catppuccin_mocha]
+rosewater = "#f5e0dc"
+flamingo = "#f2cdcd"
+pink = "#f5c2e7"
+mauve = "#cba6f7"
+red = "#f38ba8"
+maroon = "#eba0ac"
+peach = "#fab387"
+yellow = "#f9e2af"
+green = "#a6e3a1"
+teal = "#94e2d5"
+sky = "#89dceb"
+sapphire = "#74c7ec"
+blue = "#89b4fa"
+lavender = "#b4befe"
+text = "#cdd6f4"
+subtext1 = "#bac2de"
+subtext0 = "#a6adc8"
+overlay2 = "#9399b2"
+overlay1 = "#7f849c"
+overlay0 = "#6c7086"
+surface2 = "#585b70"
+surface1 = "#45475a"
+surface0 = "#313244"
+base = "#1e1e2e"
+mantle = "#181825"
+crust = "#11111b"
+
+[palettes.gruvbox_material]
+bg0 = "#1d2021"
+bg  = "#282828"
+surface = "#32302f"
+surface_alt = "#504945"
+fg = "#ddc7a1"
+gray = "#a89984"
+red = "#ea6962"
+orange = "#e78a4e"
+yellow = "#d8a657"
+green = "#a9b665"
+aqua = "#89b482"
+blue = "#7daea3"
+purple = "#d3869b" 
+

@@ -10,4 +10,7 @@ echo "Linking kitty config..."
 mkdir -p "${HOME}/.config/"
 ln -sf "${FRESH_SH_DIR}/dotfiles/kitty" "${HOME}/.config/kitty"
 
+echo "Linking starship config..."
+ln -sf "${FRESH_SH_DIR}/dotfiles/starship.toml" "${HOME}/.config/starship.toml"
+
 echo "Done!"
