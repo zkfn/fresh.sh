@@ -68,6 +68,7 @@ treesitter.setup({
     "json",
     "html",
     "css",
+    "go",
   },
 })
 
