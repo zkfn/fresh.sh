@@ -94,6 +94,7 @@ local ts_ft = {
   vimdoc = true,
   markdown = true,
   go = true,
+  haskell = true,
 }
 
 vim.api.nvim_create_autocmd("FileType", {
