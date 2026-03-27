@@ -21,6 +21,12 @@ local wk = require("which-key")
 cmp.event:on("confirm_done", cmp_autopairs.on_confirm_done())
 vim.lsp.config("*", { capabilities = require("cmp_nvim_lsp").default_capabilities() })
 
+vim.lsp.config("hls", {
+  cmd = { "haskell-language-server-wrapper", "--lsp" },
+  filetypes = { "haskell", "lhaskell", "cabal" },
+})
+vim.lsp.enable("hls")
+
 wk.add({
   {
     "gd",
