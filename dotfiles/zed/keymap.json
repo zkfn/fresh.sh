@@ -1,0 +1,62 @@
+// Zed keymap
+//
+// For information on binding keys, see the Zed
+// documentation: https://zed.dev/docs/key-bindings
+//
+// To see the default key bindings run `zed: open default keymap`
+// from the command palette.
+[
+  {
+    "context": "Workspace",
+    "bindings": {
+      "shift shift": "file_finder::Toggle",
+    },
+  },
+  {
+    "context": "vim_mode != insert",
+    "bindings": {
+      "ctrl-enter": "agent::ToggleFocus",
+    },
+  },
+  {
+    "context": "Editor && showing_completions",
+    "bindings": {
+      "ctrl-j": "editor::ContextMenuNext",
+      "ctrl-k": "editor::ContextMenuPrevious",
+      "ctrl-l": "editor::ConfirmCompletion",
+    },
+  },
+  {
+    "context": "Editor && !showing_completions",
+    "bindings": {
+      "ctrl-;": "editor::ShowCompletions",
+    },
+  },
+  {
+    "context": "(VimControl && !menu) || Dock || Pane || AgentPanel",
+    "bindings": {
+      "ctrl-h": "workspace::ActivatePaneLeft",
+      "ctrl-l": "workspace::ActivatePaneRight",
+      "ctrl-k": "workspace::ActivatePaneUp",
+      "ctrl-j": "workspace::ActivatePaneDown",
+    },
+  },
+  {
+    "context": "VimControl && !menu",
+    "bindings": {
+      "j": ["workspace::SendKeystrokes", "g j"],
+      "k": ["workspace::SendKeystrokes", "g k"],
+      "space space": "editor::Format",
+      "] g": "editor::GoToHunk",
+      "[ g": "editor::GoToPreviousHunk",
+      "g p ": "editor::ToggleSelectedDiffHunks",
+    },
+  },
+  {
+    "context": "VimControl || EmptyPane || KeyContextView || Terminal",
+    "bindings": {
+      "ctrl-x": "pane::CloseAllItems",
+      "space x": "pane::CloseActiveItem",
+    },
+  },
+]
