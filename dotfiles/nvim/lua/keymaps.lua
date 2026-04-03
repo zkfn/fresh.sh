@@ -65,3 +65,12 @@ wk.add({
   silent = true,
   noremap = true,
 })
+
+-- Terminal window navigation (skip normal mode)
+wk.add({
+  mode = "t",
+  { "<C-w>h", [[<C-\><C-n><C-w>h]], desc = "Window left" },
+  { "<C-w>j", [[<C-\><C-n><C-w>j]], desc = "Window down" },
+  { "<C-w>k", [[<C-\><C-n><C-w>k]], desc = "Window up" },
+  { "<C-w>l", [[<C-\><C-n><C-w>l]], desc = "Window right" },
+})

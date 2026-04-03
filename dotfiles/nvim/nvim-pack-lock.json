@@ -16,6 +16,10 @@
       "rev": "c9a31e51069977edaad9560473b5d031fcc5d38b",
       "src": "https://github.com/greggh/claude-code.nvim"
     },
+    "claudecode.nvim": {
+      "rev": "432121f0f5b9bda041030d1e9e83b7ba3a93dd8f",
+      "src": "https://github.com/coder/claudecode.nvim"
+    },
     "cmp-nvim-lsp": {
       "rev": "cbc7b02bb99fae35cb42f514762b89b5126651ef",
       "src": "https://github.com/hrsh7th/cmp-nvim-lsp"

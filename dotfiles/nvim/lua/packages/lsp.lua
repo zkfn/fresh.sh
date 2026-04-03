@@ -183,6 +183,7 @@ require("conform").setup({
     python = { "black" },
     php = { "pint", "php_cs_fixer" },
     blade = { "blade-formatter" },
+    typst = { "typstyle" },
   },
   log_level = vim.log.levels.DEBUG,
   formatters = {

@@ -25,7 +25,7 @@ vim.pack.add({
   "https://github.com/JoosepAlviste/nvim-ts-context-commentstring",
 
   -- Claude
-  "https://github.com/greggh/claude-code.nvim",
+  "https://github.com/coder/claudecode.nvim",
 })
 
 vim.g.snacks_animate = false
@@ -38,8 +38,22 @@ vim.g.gruvbox_material_better_performance = 1
 
 vim.cmd.colorscheme("gruvbox-material")
 local wk = require("which-key")
+local helpers = require("helpers")
 
-require("claude-code").setup()
+require("claudecode").setup()
+
+wk.add({
+  { "<leader>a", group = "AI/Claude Code", desc = "[A]I/Claude Code" },
+  { "<leader>ac", helpers.cmd("ClaudeCode"), desc = "[A]I [C]laude Toggle" },
+  { "<leader>af", helpers.cmd("ClaudeCodeFocus"), desc = "[A]I [F]ocus" },
+  { "<leader>ar", helpers.cmd("ClaudeCode --resume"), desc = "[A]I [R]esume" },
+  { "<leader>aC", helpers.cmd("ClaudeCode --continue"), desc = "[A]I [C]ontinue" },
+  { "<leader>am", helpers.cmd("ClaudeCodeSelectModel"), desc = "[A]I select [M]odel" },
+  { "<leader>ab", helpers.cmd("ClaudeCodeAdd %"), desc = "[A]I add [B]uffer" },
+  { "<leader>aa", helpers.cmd("ClaudeCodeDiffAccept"), desc = "[A]I [A]ccept diff" },
+  { "<leader>ad", helpers.cmd("ClaudeCodeDiffDeny"), desc = "[A]I [D]eny diff" },
+  { "<leader>as", "<cmd>ClaudeCodeSend<cr>", mode = "v", desc = "[A]I [S]end selection" },
+})
 
 -- Indent bank line
 require("ibl").setup()
