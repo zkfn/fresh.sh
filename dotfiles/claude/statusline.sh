@@ -10,6 +10,7 @@ C_YELLOW='\033[38;2;216;166;87m'
 C_AQUA='\033[38;2;125;174;163m'
 C_GREEN='\033[38;2;169;182;101m'
 C_RED='\033[38;2;234;105;98m'
+C_FLAMINGO='\033[38;2;242;205;205m'
 C_OFF='\033[0m'
 
 SEP="${C_DIM} | ${C_OFF}"
@@ -64,15 +65,20 @@ bar() {
 	done
 }
 
-# label bar pct [suffix] -> "label ●●●○○○○○ 42% (suffix)"
+# label pct [color] -> "label ▬▬▬▭▭▭▭▭ 42%"
+# Without a colour the meter heats up with usage; with one it stays that colour.
 meter() {
-	printf '%b%s%b %b%s%b %b%s%%%b' \
-		"$C_DIM" "$1" "$C_OFF" \
-		"$(heat "$2")" "$(bar "$2")" "$C_OFF" \
-		"$(heat "$2")" "$2" "$C_OFF"
 	if [ -n "${3:-}" ]; then
-		printf '%b %s%b' "$C_DIM" "$3" "$C_OFF"
+		label_color="$3"
+		fill_color="$3"
+	else
+		label_color="$C_DIM"
+		fill_color="$(heat "$2")"
 	fi
+	printf '%b%s%b %b%s%b %b%s%%%b' \
+		"$label_color" "$1" "$C_OFF" \
+		"$fill_color" "$(bar "$2")" "$C_OFF" \
+		"$fill_color" "$2" "$C_OFF"
 }
 
 # Epoch seconds -> "4h36m" / "36m" of time left, empty once it has passed.
@@ -129,11 +135,14 @@ if [ "$session" -ge 0 ]; then
 fi
 
 if [ "$week" -ge 0 ]; then
-	# The weekly window is too far out for a countdown to be useful, so show
-	# the reset moment itself. date(1) renders it in the local timezone.
-	when=""
-	[ "$week_resets" -gt 0 ] && when=$(date -d "@${week_resets}" +'%a %H:%M' 2>/dev/null || true)
-	out="${out}${SEP}$(meter 7d "$week" "$when")"
+	# The weekly window is too far out for a countdown to be useful, so label
+	# it with the reset moment. date(1) renders it in the local timezone.
+	label="7d"
+	if [ "$week_resets" -gt 0 ]; then
+		when=$(date -d "@${week_resets}" +'%a %H:%M' 2>/dev/null || true)
+		[ -n "$when" ] && label="$when"
+	fi
+	out="${out}${SEP}$(meter "$label" "$week" "$C_FLAMINGO")"
 fi
 
 printf '%b\n' "$out"
