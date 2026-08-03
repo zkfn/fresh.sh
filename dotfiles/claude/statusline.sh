@@ -114,9 +114,14 @@ if [ "$ctx" -ge 0 ]; then
 fi
 
 if [ "$session" -ge 0 ]; then
-	left=""
-	[ "$resets_at" -gt 0 ] && left=$(countdown "$resets_at")
-	out="${out}${SEP}$(meter 5h "$session" "$left")"
+	# Label the window by what is left of it, falling back to its nominal
+	# length when the reset time is not reported.
+	label="5h"
+	if [ "$resets_at" -gt 0 ]; then
+		left=$(countdown "$resets_at")
+		[ -n "$left" ] && label="$left"
+	fi
+	out="${out}${SEP}$(meter "$label" "$session")"
 fi
 
 printf '%b\n' "$out"
