@@ -9,6 +9,9 @@
     "diffRemovedDimmed": "rgb(50,26,25)",
     "diffRemovedWord": "rgb(94,48,46)",
 
+    "permission": "rgb(231,138,78)",
+    "permissionShimmer": "rgb(245,170,120)",
+
     "suggestion": "rgb(242,205,205)",
     "remember": "rgb(242,205,205)",
 
