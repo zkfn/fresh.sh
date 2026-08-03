@@ -35,12 +35,12 @@
     "promptBorderShimmer": "rgb(124,111,100)",
     "bashBorder": "rgb(211,134,155)",
 
-    "diffAdded": "rgb(52,56,27)",
-    "diffRemoved": "rgb(64,33,32)",
-    "diffAddedDimmed": "rgb(45,47,30)",
-    "diffRemovedDimmed": "rgb(52,34,33)",
-    "diffAddedWord": "rgb(80,88,40)",
-    "diffRemovedWord": "rgb(100,50,48)",
+    "diffAdded": "rgb(59,68,57)",
+    "diffRemoved": "rgb(76,52,50)",
+    "diffAddedDimmed": "rgb(50,55,47)",
+    "diffRemovedDimmed": "rgb(58,46,45)",
+    "diffAddedWord": "rgb(77,90,68)",
+    "diffRemovedWord": "rgb(97,66,64)",
 
     "rate_limit_fill": "rgb(216,166,87)",
     "rate_limit_empty": "rgb(69,64,61)",
