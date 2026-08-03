@@ -12,8 +12,8 @@
     "permission": "rgb(231,138,78)",
     "permissionShimmer": "rgb(245,170,120)",
 
-    "suggestion": "rgb(242,205,205)",
-    "remember": "rgb(242,205,205)",
+    "suggestion": "rgb(234,105,98)",
+    "remember": "rgb(234,105,98)",
 
     "rate_limit_fill": "rgb(216,166,87)",
     "rate_limit_empty": "rgb(69,64,61)"
