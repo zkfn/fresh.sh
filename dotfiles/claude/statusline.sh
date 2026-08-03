@@ -1,6 +1,6 @@
 #!/bin/sh
 # Claude Code status line. Reads the session JSON on stdin, prints one line.
-# Shows: context, session and weekly meters on top; dir (+ worktree) and branch below.
+# Shows: dir (+ worktree) and branch on top; context, session and weekly meters below.
 set -eu
 
 # gruvbox-material, matching the tmux status bar
@@ -96,26 +96,26 @@ countdown() {
 	fi
 }
 
-# Claude Code keeps every non-empty line of stdout: the meters get the top row,
-# location the one below it.
-top=""
-out=""
+# Claude Code keeps every non-empty line of stdout: location gets the top row,
+# the meters the one below it.
+location=""
+meters=""
 
-# Meters sit side by side, separated by whitespace alone.
+# Meters sit side by side on the lower row, separated by whitespace alone.
 add_meter() {
-	if [ -z "$top" ]; then
-		top="$1"
+	if [ -z "$meters" ]; then
+		meters="$1"
 	else
-		top="${top}  $1"
+		meters="${meters}  $1"
 	fi
 }
 
-# Append to the bottom row, separating from whatever is already there.
+# Append to the location row, separating from whatever is already there.
 add() {
-	if [ -z "$out" ]; then
-		out="$1"
+	if [ -z "$location" ]; then
+		location="$1"
 	else
-		out="${out}${SEP}$1"
+		location="${location}${SEP}$1"
 	fi
 }
 
@@ -168,7 +168,7 @@ if [ "$week" -ge 0 ]; then
 	add_meter "$(meter "$label" "$week" "$C_FLAMINGO")"
 fi
 
-if [ -n "$top" ]; then
-	printf '%b\n' "$top"
+if [ -n "$location" ]; then
+	printf '%b\n' "$location"
 fi
-printf '%b\n' "$out"
+printf '%b\n' "$meters"
