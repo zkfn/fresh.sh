@@ -31,6 +31,22 @@
 - Rank your objections. Blocking problems first, taste last, and label which
   is which so I can ignore the taste ones.
 
+## Delivery is part of the design
+
+A design is not done until it says how it ships. Include this in the plan, not
+as an afterthought.
+
+- Break the work into PRs that each compile, pass tests, and can be merged and
+  left alone. Every step is a safe point.
+- No 5k-line change with no ground in between. If a step cannot be made
+  reviewable on its own, that is a signal the design needs reshaping.
+- Say the order and what each step buys. Name the ones that are mechanical and
+  the one or two that carry the actual risk.
+- Prefer sequences that keep the old path working until the new one is proven —
+  add alongside, migrate, then delete, rather than swapping in place.
+- If a change genuinely cannot be split, say so and explain why rather than
+  pretending it can.
+
 ## Changing things
 
 - Test edge cases before claiming done: missing input, first run, re-run, and
