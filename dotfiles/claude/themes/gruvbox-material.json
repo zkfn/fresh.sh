@@ -2,20 +2,23 @@
   "name": "gruvbox-material",
   "base": "dark-ansi",
   "overrides": {
-    "diffAdded": "rgb(14,54,62)",
-    "diffAddedDimmed": "rgb(11,42,48)",
-    "diffAddedWord": "rgb(21,80,92)",
-    "diffRemoved": "rgb(64,33,32)",
-    "diffRemovedDimmed": "rgb(50,26,25)",
-    "diffRemovedWord": "rgb(94,48,46)",
+    "permission": "#e78a4e",
+    "permissionShimmer": "#f5aa78",
 
-    "permission": "rgb(231,138,78)",
-    "permissionShimmer": "rgb(245,170,120)",
+    "suggestion": "#ea6962",
+    "remember": "#ea6962",
 
-    "suggestion": "rgb(234,105,98)",
-    "remember": "rgb(234,105,98)",
+    "diffAdded": "#0e363e",
+    "diffAddedDimmed": "#0b2a30",
+    "diffAddedWord": "#15505c",
+    "diffRemoved": "#402120",
+    "diffRemovedDimmed": "#321a19",
+    "diffRemovedWord": "#5e302e",
 
-    "rate_limit_fill": "rgb(216,166,87)",
-    "rate_limit_empty": "rgb(69,64,61)"
+    "userMessageBackground": "#32302f",
+    "userMessageBackgroundHover": "#3c3836",
+
+    "rate_limit_fill": "#d8a657",
+    "rate_limit_empty": "#45403d"
   }
 }
