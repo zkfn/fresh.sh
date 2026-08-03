@@ -15,7 +15,7 @@ mkdir -p "${CLAUDE_DIR}"
 # state (projects/, history.jsonl, sessions/, .credentials.json, caches) and
 # stays put. Items missing from dotfiles/claude are skipped, so adding e.g.
 # CLAUDE.md or agents/ to the repo later is enough to get it linked.
-for item in CLAUDE.md settings.json keybindings.json statusline.sh agents commands skills output-styles; do
+for item in CLAUDE.md settings.json keybindings.json statusline.sh agents commands skills output-styles themes; do
 	link "${CLAUDE_SRC}/${item}" "${CLAUDE_DIR}/${item}"
 done
 

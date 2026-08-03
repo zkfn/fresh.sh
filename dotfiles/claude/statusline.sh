@@ -1,6 +1,6 @@
 #!/bin/sh
 # Claude Code status line. Reads the session JSON on stdin, prints one line.
-# Shows: dir (+ worktree), branch, context usage, 5h session usage bar.
+# Shows: dir (+ worktree), branch, context usage, 5h session usage.
 set -eu
 
 # gruvbox-material, matching the tmux status bar
@@ -8,8 +8,12 @@ C_DIM='\033[38;2;146;131;116m'
 C_FG='\033[38;2;221;199;161m'
 C_YELLOW='\033[38;2;216;166;87m'
 C_AQUA='\033[38;2;125;174;163m'
+C_GREEN='\033[38;2;169;182;101m'
 C_RED='\033[38;2;234;105;98m'
 C_OFF='\033[0m'
+
+SEP="${C_DIM} │ ${C_OFF}"
+CELLS=8
 
 input=$(cat)
 
@@ -36,19 +40,28 @@ heat() {
 	elif [ "$1" -ge 50 ]; then
 		printf '%b' "$C_YELLOW"
 	else
-		printf '%b' "$C_AQUA"
+		printf '%b' "$C_GREEN"
 	fi
 }
 
-# 5-cell bar, one cell per 20%.
+# One glyph per 100/CELLS percent, rounded. Both cells are U+2588/U+2591 block
+# elements so every piece has the same width.
 bar() {
-	filled=$(($1 / 20))
-	[ "$filled" -gt 5 ] && filled=5
+	filled=$((($1 * CELLS + 50) / 100))
+	[ "$filled" -gt "$CELLS" ] && filled=$CELLS
 	i=0
-	while [ "$i" -lt 5 ]; do
-		if [ "$i" -lt "$filled" ]; then printf '▰'; else printf '▱'; fi
+	while [ "$i" -lt "$CELLS" ]; do
+		if [ "$i" -lt "$filled" ]; then printf '█'; else printf '░'; fi
 		i=$((i + 1))
 	done
+}
+
+# label bar pct -> "label ████░░░░ 42%"
+meter() {
+	printf '%b%s%b %b%s%b %b%s%%%b' \
+		"$C_DIM" "$1" "$C_OFF" \
+		"$(heat "$2")" "$(bar "$2")" "$C_OFF" \
+		"$(heat "$2")" "$2" "$C_OFF"
 }
 
 out=""
@@ -70,18 +83,18 @@ if git_dir=$(git -C "${dir:-.}" --no-optional-locks rev-parse --git-dir 2>/dev/n
 	# A linked worktree has its gitdir inside the main repo's worktrees/ dir.
 	worktree=""
 	case "$git_dir" in
-	*/worktrees/*) worktree=" ${C_DIM}⑂$(basename "$(git -C "$dir" rev-parse --show-toplevel)")${C_OFF}" ;;
+	*/worktrees/*) worktree=" ${C_AQUA}⑂ $(basename "$(git -C "$dir" rev-parse --show-toplevel)")${C_OFF}" ;;
 	esac
 
-	out="${out} ${C_YELLOW}${branch}${dirty}${C_OFF}${worktree}"
+	out="${out}${SEP}${C_YELLOW} ${branch}${dirty}${C_OFF}${worktree}"
 fi
 
 if [ "$ctx" -ge 0 ]; then
-	out="${out} ${C_DIM}ctx${C_OFF} $(heat "$ctx")${ctx}%${C_OFF}"
+	out="${out}${SEP}$(meter ctx "$ctx")"
 fi
 
 if [ "$session" -ge 0 ]; then
-	out="${out} ${C_DIM}5h${C_OFF} $(heat "$session")$(bar "$session")${C_OFF} $(heat "$session")${session}%${C_OFF}"
+	out="${out}${SEP}$(meter 5h "$session")"
 fi
 
 printf '%b\n' "$out"
