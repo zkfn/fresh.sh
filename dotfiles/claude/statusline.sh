@@ -11,6 +11,7 @@ C_AQUA='\033[38;2;125;174;163m'
 C_GREEN='\033[38;2;169;182;101m'
 C_RED='\033[38;2;234;105;98m'
 C_PURPLE='\033[38;2;211;134;155m'
+C_CLAUDE='\033[38;2;217;119;87m'
 C_FLAMINGO='\033[38;2;242;205;205m'
 C_OFF='\033[0m'
 
@@ -95,11 +96,27 @@ countdown() {
 	fi
 }
 
+# Claude Code keeps every non-empty line of stdout, so context gets a row of
+# its own and everything else shares the one below it.
+top=""
 out=""
+
+# Append to the bottom row, separating from whatever is already there.
+add() {
+	if [ -z "$out" ]; then
+		out="$1"
+	else
+		out="${out}${SEP}$1"
+	fi
+}
+
+if [ "$ctx" -ge 0 ]; then
+	top=$(meter ctx "$ctx" "$C_CLAUDE")
+fi
 
 if [ -n "$dir" ]; then
 	pretty=$(printf '%s' "$dir" | sed "s|^${HOME}|~|")
-	out="${C_FG}${pretty}${C_OFF}"
+	add "${C_FG}${pretty}${C_OFF}"
 fi
 
 if git_dir=$(git -C "${dir:-.}" --no-optional-locks rev-parse --git-dir 2>/dev/null); then
@@ -117,11 +134,7 @@ if git_dir=$(git -C "${dir:-.}" --no-optional-locks rev-parse --git-dir 2>/dev/n
 	*/worktrees/*) worktree=" ${C_AQUA}⑂ $(basename "$(git -C "$dir" rev-parse --show-toplevel)")${C_OFF}" ;;
 	esac
 
-	out="${out}${SEP}${C_YELLOW}${branch}${dirty}${C_OFF}${worktree}"
-fi
-
-if [ "$ctx" -ge 0 ]; then
-	out="${out}${SEP}$(meter ctx "$ctx" "$C_PURPLE")"
+	add "${C_YELLOW}${branch}${dirty}${C_OFF}${worktree}"
 fi
 
 if [ "$session" -ge 0 ]; then
@@ -132,7 +145,7 @@ if [ "$session" -ge 0 ]; then
 		left=$(countdown "$resets_at")
 		[ -n "$left" ] && label="$left"
 	fi
-	out="${out}${SEP}$(meter "$label" "$session")"
+	add "$(meter "$label" "$session")"
 fi
 
 if [ "$week" -ge 0 ]; then
@@ -143,7 +156,10 @@ if [ "$week" -ge 0 ]; then
 		when=$(date -d "@${week_resets}" +'%a %H:%M' 2>/dev/null || true)
 		[ -n "$when" ] && label="$when"
 	fi
-	out="${out}${SEP}$(meter "$label" "$week" "$C_FLAMINGO")"
+	add "$(meter "$label" "$week" "$C_FLAMINGO")"
 fi
 
+if [ -n "$top" ]; then
+	printf '%b\n' "$top"
+fi
 printf '%b\n' "$out"
