@@ -1,6 +1,6 @@
 #!/bin/sh
 # Claude Code status line. Reads the session JSON on stdin, prints one line.
-# Shows: dir (+ worktree), branch, context usage, 5h session usage.
+# Shows: context, session and weekly meters on top; dir (+ worktree) and branch below.
 set -eu
 
 # gruvbox-material, matching the tmux status bar
@@ -96,10 +96,19 @@ countdown() {
 	fi
 }
 
-# Claude Code keeps every non-empty line of stdout, so context gets a row of
-# its own and everything else shares the one below it.
+# Claude Code keeps every non-empty line of stdout: the meters get the top row,
+# location the one below it.
 top=""
 out=""
+
+# Meters sit side by side, separated by whitespace alone.
+add_meter() {
+	if [ -z "$top" ]; then
+		top="$1"
+	else
+		top="${top}  $1"
+	fi
+}
 
 # Append to the bottom row, separating from whatever is already there.
 add() {
@@ -111,7 +120,7 @@ add() {
 }
 
 if [ "$ctx" -ge 0 ]; then
-	top=$(meter ctx "$ctx" "$C_CLAUDE")
+	add_meter "$(meter ctx "$ctx" "$C_CLAUDE")"
 fi
 
 if [ -n "$dir" ]; then
@@ -145,7 +154,7 @@ if [ "$session" -ge 0 ]; then
 		left=$(countdown "$resets_at")
 		[ -n "$left" ] && label="$left"
 	fi
-	add "$(meter "$label" "$session")"
+	add_meter "$(meter "$label" "$session")"
 fi
 
 if [ "$week" -ge 0 ]; then
@@ -156,7 +165,7 @@ if [ "$week" -ge 0 ]; then
 		when=$(date -d "@${week_resets}" +'%a %H:%M' 2>/dev/null || true)
 		[ -n "$when" ] && label="$when"
 	fi
-	add "$(meter "$label" "$week" "$C_FLAMINGO")"
+	add_meter "$(meter "$label" "$week" "$C_FLAMINGO")"
 fi
 
 if [ -n "$top" ]; then
