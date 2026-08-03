@@ -23,7 +23,7 @@ vim.pack.add({
   -- Comments
   "https://github.com/numToStr/Comment.nvim",
   "https://github.com/JoosepAlviste/nvim-ts-context-commentstring",
-
+  { src = "https://github.com/chomosuke/typst-preview.nvim", tag = "v1.*" },
   -- Claude
   "https://github.com/coder/claudecode.nvim",
 })
