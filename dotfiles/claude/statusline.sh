@@ -120,7 +120,7 @@ if git_dir=$(git -C "${dir:-.}" --no-optional-locks rev-parse --git-dir 2>/dev/n
 fi
 
 if [ "$ctx" -ge 0 ]; then
-	out="${out}${SEP}$(meter ctx "$ctx")"
+	out="${out}${SEP}$(meter ctx "$ctx" "$C_YELLOW")"
 fi
 
 if [ "$session" -ge 0 ]; then
