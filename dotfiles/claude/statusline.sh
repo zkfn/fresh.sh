@@ -12,7 +12,7 @@ C_GREEN='\033[38;2;169;182;101m'
 C_RED='\033[38;2;234;105;98m'
 C_OFF='\033[0m'
 
-SEP="${C_DIM} │ ${C_OFF}"
+SEP="${C_DIM} | ${C_OFF}"
 CELLS=8
 
 input=$(cat)
@@ -44,14 +44,16 @@ heat() {
 	fi
 }
 
-# One glyph per 100/CELLS percent, rounded. Both cells are U+2588/U+2591 block
-# elements so every piece has the same width.
+# One glyph per 100/CELLS percent, rounded.
+BAR_FULL='●'
+BAR_EMPTY='○'
+
 bar() {
 	filled=$((($1 * CELLS + 50) / 100))
 	[ "$filled" -gt "$CELLS" ] && filled=$CELLS
 	i=0
 	while [ "$i" -lt "$CELLS" ]; do
-		if [ "$i" -lt "$filled" ]; then printf '█'; else printf '░'; fi
+		if [ "$i" -lt "$filled" ]; then printf '%s' "$BAR_FULL"; else printf '%s' "$BAR_EMPTY"; fi
 		i=$((i + 1))
 	done
 }
