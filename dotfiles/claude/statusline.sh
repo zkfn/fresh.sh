@@ -10,6 +10,7 @@ C_YELLOW='\033[38;2;216;166;87m'
 C_AQUA='\033[38;2;125;174;163m'
 C_GREEN='\033[38;2;169;182;101m'
 C_RED='\033[38;2;234;105;98m'
+C_PURPLE='\033[38;2;211;134;155m'
 C_FLAMINGO='\033[38;2;242;205;205m'
 C_OFF='\033[0m'
 
@@ -120,7 +121,7 @@ if git_dir=$(git -C "${dir:-.}" --no-optional-locks rev-parse --git-dir 2>/dev/n
 fi
 
 if [ "$ctx" -ge 0 ]; then
-	out="${out}${SEP}$(meter ctx "$ctx" "$C_YELLOW")"
+	out="${out}${SEP}$(meter ctx "$ctx" "$C_PURPLE")"
 fi
 
 if [ "$session" -ge 0 ]; then
