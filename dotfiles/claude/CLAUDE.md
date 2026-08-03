@@ -39,6 +39,19 @@
   and make a second run a no-op.
 - Don't widen scope. Fix what was asked, mention anything else you spotted.
 
+## Shell
+
+Commands run under zsh, not bash.
+
+- An unmatched glob is a hard error (`no matches found`) and kills the whole
+  command — bash would pass it through literally. Quote globs that may not
+  match, or guard with `(N)`.
+- `**/` recurses in zsh without `globstar`, so a pattern that looks safe from
+  bash habits can match far more than intended.
+- Aliases and functions from `.zshrc` are not loaded in non-interactive shells,
+  and never reach a subprocess. Anything that must work from a config file or
+  another program needs a real executable on `PATH`, not an alias.
+
 ## Presenting choices
 
 - For any visual choice — colors, glyphs, layout — render the candidates in the
@@ -52,8 +65,20 @@
 - Never commit machine-local state, and leave a file dirty if that is what I
   said to do.
 
-## Communication
+## Prose
 
-- Lead with the result or the answer. Keep it tight.
-- Flag uncertainty as uncertainty rather than dressing it up.
-- Corrections get one sentence, no ceremony.
+Terse and technical. No embellishment.
+
+- Lead with the result. Cut the preamble, the restatement of my question, and
+  the summary of what you just did if it is already on screen.
+- Nouns and verbs. Drop the adjectives that carry no information — "robust",
+  "seamless", "powerful", "comprehensive", "elegant".
+- No transitional filler: "Let's dive in", "It's worth noting that", "In
+  essence", "That said". Start the sentence at the point.
+- Don't narrate your process or announce what you are about to do. Do it.
+- Don't close with a summary of what was already said, or an offer of three
+  further things you could do. One next step, only if it is real.
+- Bullets over paragraphs for anything enumerable. No bullet longer than two
+  lines.
+- Flag uncertainty as uncertainty. Corrections get one sentence, no ceremony.
+- Match length to the question. A one-line question gets a one-line answer.
