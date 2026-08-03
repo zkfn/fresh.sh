@@ -27,13 +27,17 @@ fields=$(printf '%s' "$input" | jq -r '[
 	(.workspace.current_dir // .cwd // ""),
 	(.context_window.used_percentage // -1 | floor),
 	(.rate_limits.five_hour.used_percentage // -1 | floor),
-	(.rate_limits.five_hour.resets_at // -1 | floor)
+	(.rate_limits.five_hour.resets_at // -1 | floor),
+	(.rate_limits.seven_day.used_percentage // -1 | floor),
+	(.rate_limits.seven_day.resets_at // -1 | floor)
 ] | @tsv')
 
 dir=$(printf '%s' "$fields" | cut -f1)
 ctx=$(printf '%s' "$fields" | cut -f2)
 session=$(printf '%s' "$fields" | cut -f3)
 resets_at=$(printf '%s' "$fields" | cut -f4)
+week=$(printf '%s' "$fields" | cut -f5)
+week_resets=$(printf '%s' "$fields" | cut -f6)
 
 # Colour by how close to full something is.
 heat() {
@@ -106,7 +110,7 @@ if git_dir=$(git -C "${dir:-.}" --no-optional-locks rev-parse --git-dir 2>/dev/n
 	*/worktrees/*) worktree=" ${C_AQUA}⑂ $(basename "$(git -C "$dir" rev-parse --show-toplevel)")${C_OFF}" ;;
 	esac
 
-	out="${out}${SEP}${C_YELLOW} ${branch}${dirty}${C_OFF}${worktree}"
+	out="${out}${SEP}${C_YELLOW}${branch}${dirty}${C_OFF}${worktree}"
 fi
 
 if [ "$ctx" -ge 0 ]; then
@@ -122,6 +126,14 @@ if [ "$session" -ge 0 ]; then
 		[ -n "$left" ] && label="$left"
 	fi
 	out="${out}${SEP}$(meter "$label" "$session")"
+fi
+
+if [ "$week" -ge 0 ]; then
+	# The weekly window is too far out for a countdown to be useful, so show
+	# the reset moment itself. date(1) renders it in the local timezone.
+	when=""
+	[ "$week_resets" -gt 0 ] && when=$(date -d "@${week_resets}" +'%a %H:%M' 2>/dev/null || true)
+	out="${out}${SEP}$(meter 7d "$week" "$when")"
 fi
 
 printf '%b\n' "$out"
