@@ -12,6 +12,6 @@
     "padding": 0
   },
   "tui": "fullscreen",
-  "theme": "dark-daltonized",
+  "theme": "auto",
   "autoCompactEnabled": false
 }
