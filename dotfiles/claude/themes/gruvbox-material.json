@@ -1,51 +1,18 @@
 {
   "name": "gruvbox-material",
-  "base": "dark",
+  "base": "dark-ansi",
   "overrides": {
-    "text": "rgb(212,190,152)",
-    "inverseText": "rgb(40,40,40)",
-    "subtle": "rgb(146,131,116)",
-    "inactive": "rgb(124,111,100)",
-    "inactiveShimmer": "rgb(168,153,132)",
-    "background": "rgb(40,40,40)",
-    "selectionBg": "rgb(69,64,61)",
+    "diffAdded": "rgb(14,54,62)",
+    "diffAddedDimmed": "rgb(11,42,48)",
+    "diffAddedWord": "rgb(21,80,92)",
+    "diffRemoved": "rgb(64,33,32)",
+    "diffRemovedDimmed": "rgb(50,26,25)",
+    "diffRemovedWord": "rgb(94,48,46)",
 
-    "claude": "rgb(231,138,78)",
-    "claudeShimmer": "rgb(245,170,120)",
-    "success": "rgb(169,182,101)",
-    "error": "rgb(234,105,98)",
-    "warning": "rgb(216,166,87)",
-    "warningShimmer": "rgb(232,192,130)",
-
-    "permission": "rgb(125,174,163)",
-    "permissionShimmer": "rgb(160,200,190)",
-    "planMode": "rgb(137,180,130)",
-    "autoAccept": "rgb(211,134,155)",
-    "autoAcceptShimmer": "rgb(230,170,185)",
-    "skill": "rgb(211,134,155)",
-    "merged": "rgb(211,134,155)",
-    "remember": "rgb(211,134,155)",
-    "suggestion": "rgb(125,174,163)",
-    "ide": "rgb(125,174,163)",
-    "fastMode": "rgb(137,180,130)",
-    "fastModeShimmer": "rgb(170,205,165)",
-    "effortUltra": "rgb(211,134,155)",
-
-    "promptBorder": "rgb(80,73,69)",
-    "promptBorderShimmer": "rgb(124,111,100)",
-    "bashBorder": "rgb(211,134,155)",
-
-    "diffAdded": "rgb(59,68,57)",
-    "diffRemoved": "rgb(76,52,50)",
-    "diffAddedDimmed": "rgb(50,55,47)",
-    "diffRemovedDimmed": "rgb(58,46,45)",
-    "diffAddedWord": "rgb(77,90,68)",
-    "diffRemovedWord": "rgb(97,66,64)",
+    "suggestion": "rgb(242,205,205)",
+    "remember": "rgb(242,205,205)",
 
     "rate_limit_fill": "rgb(216,166,87)",
-    "rate_limit_empty": "rgb(69,64,61)",
-
-    "briefLabelYou": "rgb(125,174,163)",
-    "briefLabelClaude": "rgb(231,138,78)"
+    "rate_limit_empty": "rgb(69,64,61)"
   }
 }
