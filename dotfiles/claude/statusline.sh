@@ -26,12 +26,14 @@ fi
 fields=$(printf '%s' "$input" | jq -r '[
 	(.workspace.current_dir // .cwd // ""),
 	(.context_window.used_percentage // -1 | floor),
-	(.rate_limits.five_hour.used_percentage // -1 | floor)
+	(.rate_limits.five_hour.used_percentage // -1 | floor),
+	(.rate_limits.five_hour.resets_at // -1 | floor)
 ] | @tsv')
 
 dir=$(printf '%s' "$fields" | cut -f1)
 ctx=$(printf '%s' "$fields" | cut -f2)
 session=$(printf '%s' "$fields" | cut -f3)
+resets_at=$(printf '%s' "$fields" | cut -f4)
 
 # Colour by how close to full something is.
 heat() {
@@ -58,12 +60,28 @@ bar() {
 	done
 }
 
-# label bar pct -> "label ████░░░░ 42%"
+# label bar pct [suffix] -> "label ●●●○○○○○ 42% (suffix)"
 meter() {
 	printf '%b%s%b %b%s%b %b%s%%%b' \
 		"$C_DIM" "$1" "$C_OFF" \
 		"$(heat "$2")" "$(bar "$2")" "$C_OFF" \
 		"$(heat "$2")" "$2" "$C_OFF"
+	if [ -n "${3:-}" ]; then
+		printf '%b %s%b' "$C_DIM" "$3" "$C_OFF"
+	fi
+}
+
+# Epoch seconds -> "4h36m" / "36m" of time left, empty once it has passed.
+countdown() {
+	left=$(($1 - $(date +%s)))
+	[ "$left" -le 0 ] && return 0
+	h=$((left / 3600))
+	m=$(((left % 3600) / 60))
+	if [ "$h" -gt 0 ]; then
+		printf '%dh%02dm' "$h" "$m"
+	else
+		printf '%dm' "$m"
+	fi
 }
 
 out=""
@@ -96,7 +114,9 @@ if [ "$ctx" -ge 0 ]; then
 fi
 
 if [ "$session" -ge 0 ]; then
-	out="${out}${SEP}$(meter 5h "$session")"
+	left=""
+	[ "$resets_at" -gt 0 ] && left=$(countdown "$resets_at")
+	out="${out}${SEP}$(meter 5h "$session" "$left")"
 fi
 
 printf '%b\n' "$out"
