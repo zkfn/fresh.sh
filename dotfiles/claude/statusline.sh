@@ -47,8 +47,8 @@ heat() {
 }
 
 # One glyph per 100/CELLS percent, rounded.
-BAR_FULL='●'
-BAR_EMPTY='○'
+BAR_FULL='▮'
+BAR_EMPTY='▯'
 
 bar() {
 	filled=$((($1 * CELLS + 50) / 100))
