@@ -6,6 +6,11 @@
     "rust-analyzer-lsp@claude-plugins-official": true,
     "lua-lsp@claude-plugins-official": true
   },
+  "statusLine": {
+    "type": "command",
+    "command": "~/.claude/statusline.sh",
+    "padding": 0
+  },
   "tui": "fullscreen",
   "theme": "dark-daltonized",
   "autoCompactEnabled": false
