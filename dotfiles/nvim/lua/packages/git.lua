@@ -199,6 +199,12 @@ local function gh_dash()
       border = "rounded",
       title = " gh dash ",
       title_pos = "center",
+      -- gruvbox-material floats sit on bg3, a lighter grey than Normal. That
+      -- reads as depth on a small popup but as a mismatched slab on a window
+      -- this size, so keep the editor background and colour only the border.
+      wo = {
+        winhighlight = "NormalFloat:Normal,FloatBorder:Grey,FloatTitle:Title",
+      },
     },
   })
 end
