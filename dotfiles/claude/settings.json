@@ -1,4 +1,7 @@
 {
+  "model": "opus[1m]",
+  "effortLevel": "high",
+  "editorMode": "vim",
   "statusLine": {
     "type": "command",
     "command": "~/.claude/statusline.sh",
@@ -14,5 +17,7 @@
   },
   "tui": "fullscreen",
   "theme": "custom:gruvbox-material",
-  "autoCompactEnabled": false
+  "autoCompactEnabled": false,
+  "agentPushNotifEnabled": true,
+  "skipWorkflowUsageWarning": true
 }
