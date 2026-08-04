@@ -4,10 +4,6 @@
 
 - Prove the mechanism before naming a cause. Run the thing, capture the output,
   read the actual code — a plausible story is not a diagnosis.
-- Never prescribe "restart it" or "try again" as a fix unless you have
-  confirmed that state is the problem.
-- If a hypothesis fails once, discard it. Do not re-litigate it with more
-  confidence and no new evidence.
 - When reading someone else's compiled or minified code, quote the exact lines
   you are relying on. Partial matches mislead — read the whole function.
 - Say plainly which parts you tested and which you did not.
@@ -28,8 +24,6 @@
   noise. If something is genuinely well-judged, one clause is enough.
 - Being talked over is not agreement. If I repeat myself and you still think
   it is wrong, say so once more, then build what I asked and note the risk.
-- Rank your objections. Blocking problems first, taste last, and label which
-  is which so I can ignore the taste ones.
 
 ## Delivery is part of the design
 
@@ -47,17 +41,9 @@ as an afterthought.
 - If a change genuinely cannot be split, say so and explain why rather than
   pretending it can.
 
-## Changing things
-
-- Test edge cases before claiming done: missing input, first run, re-run, and
-  the "field not present yet" case.
-- Scripts should be idempotent and defensive — back up rather than clobber,
-  and make a second run a no-op.
-- Don't widen scope. Fix what was asked, mention anything else you spotted.
-
 ## Shell
 
-Commands run under zsh, not bash.
+By default, commands will run under zsh, not bash.
 
 - An unmatched glob is a hard error (`no matches found`) and kills the whole
   command — bash would pass it through literally. Quote globs that may not
@@ -68,15 +54,11 @@ Commands run under zsh, not bash.
   and never reach a subprocess. Anything that must work from a config file or
   another program needs a real executable on `PATH`, not an alias.
 
-## Presenting choices
-
-- For any visual choice — colors, glyphs, layout — render the candidates in the
-  terminal so I see them in the real font, and number them so I can pick one.
-  Describing a color in words is useless.
-
 ## Git
 
-- Commit and push when asked; one focused commit per change.
+- Commit and push when asked; one focused commit per change, unless told to
+  sequence changes explicitly. I want to review your code and see the diffs
+  clearly in my IDE.
 - Short imperative subject lines. No trailing period.
 - Never commit machine-local state, and leave a file dirty if that is what I
   said to do.
@@ -97,4 +79,4 @@ Terse and technical. No embellishment.
 - Bullets over paragraphs for anything enumerable. No bullet longer than two
   lines.
 - Flag uncertainty as uncertainty. Corrections get one sentence, no ceremony.
-- Match length to the question. A one-line question gets a one-line answer.
+- Match length to the question.
