@@ -1,9 +1,27 @@
+-- markdown-preview.nvim ships a server binary that must be downloaded after the
+-- plugin is installed/updated. vim.pack doesn't run build hooks, so do it here.
+-- Registered before vim.pack.add so it also catches the very first install.
+vim.api.nvim_create_autocmd("PackChanged", {
+  callback = function(ev)
+    if ev.data.spec.name == "markdown-preview.nvim" and ev.data.kind ~= "delete" then
+      vim.fn["mkdp#util#install"]()
+    end
+  end,
+})
+
 vim.pack.add({
   "https://github.com/nvim-lualine/lualine.nvim",
   "https://github.com/nvim-mini/mini.nvim",
   "https://github.com/MeanderingProgrammer/render-markdown.nvim",
   { src = "https://github.com/akinsho/bufferline.nvim", tag = "*" },
+  -- Live markdown preview in the browser: :MarkdownPreview / :MarkdownPreviewStop
+  "https://github.com/iamcco/markdown-preview.nvim",
 })
+
+-- Refresh the preview live as you type (default only refreshes on save/leave).
+vim.g.mkdp_refresh_slow = 0
+-- Don't auto-close the browser tab when leaving a markdown buffer.
+vim.g.mkdp_auto_close = 0
 
 require("render-markdown").setup({})
 
