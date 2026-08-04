@@ -17,6 +17,9 @@ vim.o.hidden = true
 -- Set the leader
 vim.g.mapleader = " "
 
+-- pass mouse events (incl. wheel) through to :terminal buffer apps
+vim.opt.mouse = "a"
+
 vim.opt.scrolloff = 8
 vim.opt.signcolumn = "yes:1"
 
