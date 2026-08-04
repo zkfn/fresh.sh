@@ -196,6 +196,7 @@ require("snacks").setup({
   scroll = { enabled = true },
   gh = { enabled = true },
   lazygit = { enabled = true },
+  terminal = { enabled = true },
   picker = { enabled = true },
   explorer = {
     enabled = true,

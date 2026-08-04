@@ -170,6 +170,39 @@ require("diffview").setup({
   },
 })
 
+-- gh dash is a `gh` extension, not a standalone binary, and nothing in setup/
+-- installs it. Check once per session: the terminal closes itself when the
+-- process exits, so an uninstalled extension would flash its error and vanish.
+local gh_dash_ok = nil
+
+local function has_gh_dash()
+  if gh_dash_ok == nil then
+    gh_dash_ok = vim.fn.executable("gh") == 1
+      and (vim.system({ "gh", "extension", "list" }):wait().stdout or ""):find("gh%-dash") ~= nil
+  end
+  return gh_dash_ok
+end
+
+local function gh_dash()
+  if not has_gh_dash() then
+    vim.notify("gh dash not installed: gh extension install dlvhdr/gh-dash", vim.log.levels.ERROR)
+    return
+  end
+
+  -- Toggling hides the window but leaves the process running, so the dashboard
+  -- keeps its state and does not refetch on every open.
+  Snacks.terminal.toggle("gh dash", {
+    win = {
+      position = "float",
+      width = 0.9,
+      height = 0.9,
+      border = "rounded",
+      title = " gh dash ",
+      title_pos = "center",
+    },
+  })
+end
+
 wk.add({
   mode = "n",
   noremap = true,
@@ -212,6 +245,7 @@ wk.add({
     end,
     desc = "Lazygit open",
   },
+  { "<leader>gh", gh_dash, desc = "Git[H]ub dashboard (gh dash)" },
   {
     "<leader>gP",
     function()
