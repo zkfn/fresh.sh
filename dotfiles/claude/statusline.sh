@@ -123,7 +123,9 @@ a rat=\brat\b
 a faggot=\bfag(got)?s?\b
 a twink=\b(twinks?|twniks?|twikns?|tiwnks?|wtinks?|twinkks?|twiinks?|ttwinks?|twwinks?|twinnks?|twnks?|twiks?)\b
 a clanker=\b(clankers?|clunkers?|clankres?|clanekrs?|clakners?|clnakers?|calnkers?|lcankers?|claankers?|cllankers?|clankkers?|klankers?|clankrs?|clankes?)\b
-a fucker=\b(mother)?(fuckers?|fukcers?|fcukers?|fuckrs?|fuckesr?)\b'
+a fucker=\b(fuckers?|fukcers?|fcukers?|fuckrs?|fuckesr?)\b
+a motherfucker=\b(m(o|u)th(er|a)fuckers?|motherfukcers?|motherfcukers?|mtoherfuckers?|mothefuckers?|motherfuckrs?)\b
+a moron=\b(morons?|mornos?|moorns?|mroons?|morno?s?)\b'
 
 # The count a tally is scaled against, so it runs green -> yellow -> red on the
 # same thresholds as the meters: yellow from half of it, red from 80% of it.
