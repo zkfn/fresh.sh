@@ -34,7 +34,8 @@ fields=$(printf '%s' "$input" | jq -r '[
 	(.rate_limits.five_hour.resets_at // -1 | floor),
 	(.rate_limits.seven_day.used_percentage // -1 | floor),
 	(.rate_limits.seven_day.resets_at // -1 | floor),
-	(.transcript_path // "")
+	(.transcript_path // ""),
+	(.session_id // "")
 ] | @tsv')
 
 dir=$(printf '%s' "$fields" | cut -f1)
@@ -44,6 +45,17 @@ resets_at=$(printf '%s' "$fields" | cut -f4)
 week=$(printf '%s' "$fields" | cut -f5)
 week_resets=$(printf '%s' "$fields" | cut -f6)
 transcript=$(printf '%s' "$fields" | cut -f7)
+session_id=$(printf '%s' "$fields" | cut -f8)
+
+# Two sessions on the same tally would otherwise draw the same aside forever.
+# The id's first hex group offsets the hash, kept small so the multiply below
+# cannot overflow; anything that is not a plain UUID leaves the sequence alone.
+TALLY_SEED=0
+case "${session_id%%-*}" in
+[0-9a-fA-F][0-9a-fA-F][0-9a-fA-F][0-9a-fA-F][0-9a-fA-F][0-9a-fA-F][0-9a-fA-F][0-9a-fA-F])
+	TALLY_SEED=$((0x${session_id%%-*} % 100000))
+	;;
+esac
 
 # Colour by how close to full something is.
 heat() {
@@ -157,7 +169,7 @@ TALLY_JOKE_FULL=50
 # linear in $1 and its multiplier shares a factor with the modulus, so the low
 # digits march rather than scatter, and the fold is what breaks that up.
 tally_hash() {
-	h=$(($1 * 2654435761 + 12345))
+	h=$((($1 + TALLY_SEED) * 2654435761 + 12345))
 	h=$(((h / 65536) ^ h))
 	printf '%d' $((h % 100000))
 }
