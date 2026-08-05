@@ -152,6 +152,8 @@ TALLY_FLAME_MAX=5
 
 # Asides shown now and then, as "placement=text", or "placement@min=text" for
 # one that has nothing to say until the tally reaches min:
+#   pre    slipped between "you called me" and the list, to qualify the whole
+#          accusation before it is made
 #   end    appended to the row as it stands, so it brings its own punctuation
 #   count  parenthesised after one of the counts, %s being an ordinal drawn
 #          from inside that count so it can never name a later one
@@ -163,7 +165,7 @@ end=, none of it inaccurate
 end=, and the tests still pass
 end=, and you should call me more
 end@40=, impressive!
-end=, allegedly
+pre=(allegedly)
 count=(%s one was unfair)
 count=(%s one was fair)
 big=just
@@ -465,7 +467,12 @@ EOF
 	fi
 
 	if [ -n "$names" ]; then
-		tally="${C_DIM}${TALLY_PREFIX}${C_OFF} ${names}"
+		# A qualifier lands before the list, so it colours the accusation
+		# rather than any one count.
+		pre=""
+		[ "$kind" = pre ] && pre="${C_DIM}${text}${C_OFF} "
+
+		tally="${C_DIM}${TALLY_PREFIX}${C_OFF} ${pre}${names}"
 
 		# An aside finishes the sentence the names started, so it goes on before
 		# the streak: after it, the comma would read as tying the remark to the
