@@ -179,6 +179,7 @@ count=(%s one was unfair)
 count=(%s one was fair)
 count=(the %s was the funniest)
 count=(the %s was my favourite)
+count=(i still think about the %s)
 big=just
 big=only
 big=barely
