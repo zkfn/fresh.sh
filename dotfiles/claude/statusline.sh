@@ -121,7 +121,8 @@ countdown() {
 TALLY_WORDS='a retard=retard|retrad|retadr|retatd|retartd|retaard|reatrd|reetard|ratard|rtard|retarted
 a rat=\brat\b
 a faggot=\bfag(got)?s?\b
-a twink=\btwinks?\b'
+a twink=\btwinks?\b
+a clanker=\b(clankers?|clankres?|clanekrs?|clakners?|clnakers?|calnkers?|lcankers?|claankers?|cllankers?|clankkers?|klankers?|clankrs?|clankes?)\b'
 
 # The count a tally is scaled against, so it runs green -> yellow -> red on the
 # same thresholds as the meters: yellow from half of it, red from 80% of it.
