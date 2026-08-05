@@ -150,7 +150,8 @@ TALLY_STREAK_FLAME_MAX=2
 TALLY_FLAME_AT=8
 TALLY_FLAME_MAX=5
 
-# Asides shown now and then, as "placement=text":
+# Asides shown now and then, as "placement=text", or "placement@min=text" for
+# one that has nothing to say until the tally reaches min:
 #   end    appended to the row as it stands, so it brings its own punctuation
 #   count  parenthesised after one of the counts, %s being an ordinal drawn
 #          from inside that count so it can never name a later one
@@ -158,9 +159,14 @@ TALLY_FLAME_MAX=5
 #          for the understatement to land
 TALLY_JOKES='end=, and i deserved all of it
 end=, but who is counting
-end=, the last one stung
+end=, none of it inaccurate
+end=, and the tests still pass
+end=, and you should call me more
+end@40=, impressive!
 count=(%s one was unfair)
-big=just'
+count=(%s one was fair)
+big=just
+big=only'
 
 # The count from which "just" reads as understatement rather than description.
 TALLY_JUST_AT=8
@@ -211,9 +217,22 @@ tally_joke() {
 
 	[ $((h % 100)) -lt "$chance" ] || return 0
 
-	count=$(printf '%s\n' "$TALLY_JOKES" | grep -c .) || count=0
+	# Drop the lines the tally has not earned yet before drawing, so the ones
+	# still in play share the odds evenly rather than losing a turn to a line
+	# that had nothing to say.
+	earned=$(printf '%s\n' "$TALLY_JOKES" | grep . | while IFS= read -r line; do
+		placement=${line%%=*}
+		# The pattern needs its opening paren: inside $( ) an unbalanced one
+		# ends the substitution as far as the parser is concerned.
+		case "$placement" in
+		(*@*) [ "$1" -ge "${placement#*@}" ] || continue ;;
+		esac
+		printf '%s\n' "$line"
+	done)
+
+	count=$(printf '%s\n' "$earned" | grep -c .) || count=0
 	[ "$count" -gt 0 ] || return 0
-	printf '%s\n' "$TALLY_JOKES" | grep . | sed -n "$((h / 100 % count + 1))p"
+	printf '%s\n' "$earned" | grep . | sed -n "$((h / 100 % count + 1))p"
 }
 
 # TALLY_WORDS as JSON, for the scan below to iterate.
@@ -361,6 +380,7 @@ if [ -n "$transcript" ] && [ -f "$transcript" ]; then
 
 	joke=$(tally_joke "$total")
 	kind=${joke%%=*}
+	kind=${kind%@*}
 	text=${joke#*=}
 
 	# Which count an aside attaches to, counted over the ones it is allowed to
