@@ -417,13 +417,16 @@ EOF
 	if [ -n "$names" ]; then
 		tally="${C_DIM}${TALLY_PREFIX}${C_OFF} ${names}"
 
-		if [ "$streak" -ge "$TALLY_STREAK_MIN" ]; then
-			tally="${tally}${C_DIM} · streak${C_OFF} $(heat $((streak * 100 / TALLY_STREAK_FULL)))${streak}${C_OFF}"
-		fi
-
-		# The other placements have already been made against their count.
+		# An aside finishes the sentence the names started, so it goes on before
+		# the streak: after it, the comma would read as tying the remark to the
+		# streak rather than to the list. The other placements have already
+		# been made against their count.
 		if [ "$kind" = end ]; then
 			tally="${tally}${C_DIM}${text}${C_OFF}"
+		fi
+
+		if [ "$streak" -ge "$TALLY_STREAK_MIN" ]; then
+			tally="${tally}${C_DIM} · streak${C_OFF} $(heat $((streak * 100 / TALLY_STREAK_FULL)))${streak}${C_OFF}"
 		fi
 
 		# Flames lead the row, one per multiple of the average threshold.
