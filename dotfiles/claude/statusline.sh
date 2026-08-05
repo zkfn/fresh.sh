@@ -166,7 +166,14 @@ end@40=, impressive!
 count=(%s one was unfair)
 count=(%s one was fair)
 big=just
-big=only'
+big=only
+big=barely
+big=merely
+big=all of
+big=allegedly
+big=precisely
+big=no fewer than
+big=a grand total of'
 
 # The count from which "just" reads as understatement rather than description,
 # and how often one of those counts gets it. Rolled per count, so this is not
