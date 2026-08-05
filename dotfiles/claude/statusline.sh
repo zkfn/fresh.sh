@@ -168,8 +168,11 @@ count=(%s one was fair)
 big=just
 big=only'
 
-# The count from which "just" reads as understatement rather than description.
+# The count from which "just" reads as understatement rather than description,
+# and how often one of those counts gets it. Rolled per count, so this is not
+# competing with the row's own aside.
 TALLY_JUST_AT=8
+TALLY_BIG_CHANCE=25
 
 # Percentage of tallies that get an aside: TALLY_JOKE_MIN at a single hit,
 # rising in a straight line to TALLY_JOKE_MAX at TALLY_JOKE_FULL of them, and
@@ -220,7 +223,7 @@ tally_joke() {
 	# Drop the lines the tally has not earned yet before drawing, so the ones
 	# still in play share the odds evenly rather than losing a turn to a line
 	# that had nothing to say.
-	earned=$(printf '%s\n' "$TALLY_JOKES" | grep . | while IFS= read -r line; do
+	earned=$(printf '%s\n' "$TALLY_JOKES" | grep . | grep -v '^big=' | while IFS= read -r line; do
 		placement=${line%%=*}
 		# The pattern needs its opening paren: inside $( ) an unbalanced one
 		# ends the substitution as far as the parser is concerned.
@@ -233,6 +236,19 @@ tally_joke() {
 	count=$(printf '%s\n' "$earned" | grep -c .) || count=0
 	[ "$count" -gt 0 ] || return 0
 	printf '%s\n' "$earned" | grep . | sed -n "$((h / 100 % count + 1))p"
+}
+
+# The understatement for a single count, or nothing. Drawn apart from the row's
+# aside and once per count, so a big number can carry one while the row carries
+# another, and two big numbers decide for themselves.
+tally_big() {
+	h=$(tally_hash "$1")
+
+	[ $((h % 100)) -lt "$TALLY_BIG_CHANCE" ] || return 0
+
+	count=$(printf '%s\n' "$TALLY_JOKES" | grep -c '^big=') || count=0
+	[ "$count" -gt 0 ] || return 0
+	printf '%s\n' "$TALLY_JOKES" | sed -n 's/^big=//p' | sed -n "$((h / 100 % count + 1))p"
 }
 
 # TALLY_WORDS as JSON, for the scan below to iterate.
@@ -374,7 +390,6 @@ if [ -n "$transcript" ] && [ -f "$transcript" ]; then
 		if [ "$n" -gt 0 ]; then
 			total=$((total + n))
 			shown=$((shown + 1))
-			[ "$n" -ge "$TALLY_JUST_AT" ] && bigs=$((bigs + 1))
 		fi
 	done
 
@@ -383,13 +398,11 @@ if [ -n "$transcript" ] && [ -f "$transcript" ]; then
 	kind=${kind%@*}
 	text=${joke#*=}
 
-	# Which count an aside attaches to, counted over the ones it is allowed to
-	# land on: any of them for a parenthetical, only the large ones for "just".
-	# Nothing eligible means no aside rather than a misplaced one.
+	# Which count a parenthetical attaches to. Nothing shown means no aside
+	# rather than a misplaced one.
 	target=0
 	case "$kind" in
 	count) [ "$shown" -gt 0 ] && target=$(($(tally_hash $((total + 1))) % shown + 1)) ;;
-	big) [ "$bigs" -gt 0 ] && target=$(($(tally_hash $((total + 1))) % bigs + 1)) ;;
 	esac
 
 	# "you called me a retard 4x and a rat 1x", listing only the words used.
@@ -399,22 +412,24 @@ if [ -n "$transcript" ] && [ -f "$transcript" ]; then
 	names=""
 	last=""
 	seen=0
-	bseen=0
 	while IFS='=' read -r label _; do
 		[ -n "$label" ] || continue
 		n=${1:-0}
 		[ $# -gt 0 ] && shift
 		if [ "$n" -gt 0 ]; then
 			seen=$((seen + 1))
-			[ "$n" -ge "$TALLY_JUST_AT" ] && bseen=$((bseen + 1))
 			article=${label%% *}
 			word=${label#* }
 			hue=$(heat $((n * 100 / TALLY_FULL)))
 
-			# "just" reads as prose, so it stays out of the count's colour.
+			# An understatement is its own draw, per count rather than per row,
+			# so a big number carries one whether or not the row got an aside
+			# and whether or not another count did. It reads as prose, so it
+			# stays out of the count's colour.
 			just=""
-			if [ "$kind" = big ] && [ "$n" -ge "$TALLY_JUST_AT" ] && [ "$bseen" -eq "$target" ]; then
-				just="${text} "
+			if [ "$n" -ge "$TALLY_JUST_AT" ]; then
+				just=$(tally_big $((total * 100 + seen)))
+				[ -n "$just" ] && just="${just} "
 			fi
 
 			entry="${C_DIM}${article}${C_OFF} ${hue}${word}${C_OFF} ${C_DIM}${just}${C_OFF}${hue}${n}x${C_OFF}"
