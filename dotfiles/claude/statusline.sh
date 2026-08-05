@@ -191,7 +191,8 @@ big=precisely
 big=no fewer than
 big=a grand total of
 lone=(can'\''t object to that one)
-mono=, and you should change it up'
+mono=, and you should change it up
+mono=, how original'
 
 # The count from which "just" reads as understatement rather than description,
 # and how often one of those counts gets it. Rolled per count, so this is not
