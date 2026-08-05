@@ -111,21 +111,22 @@ countdown() {
 	fi
 }
 
-# One "label=regex" per line. The label carries its own article so that adding
+# One "label=regex" per line, or "label=regex=@spelt-right" to have the typos
+# among the matches counted separately. The label carries its own article so that adding
 # e.g. "an idiot" still reads right. The regex is Oniguruma, applied by jq
 # case-insensitively; \b behaves the same there on every platform, unlike in
 # BSD and GNU grep. "rat" and "fag" need those boundaries or they fire on
 # "separate" and "flags"; "retard" is left unanchored so that "retarded" and
 # "retards" count too, and carries the transpositions and dropped letters that
 # typing it in a hurry produces.
-TALLY_WORDS='a retard=retard|retrad|retadr|retatd|retartd|retaard|reatrd|reetard|ratard|rtard|retarted
+TALLY_WORDS='a retard=retard|retrad|retadr|retatd|retartd|retaard|reatrd|reetard|ratard|rtard|retarted=@retard
 a rat=\brat\b
 a faggot=\bfag(got)?s?\b
-a twink=\b(twinks?|twniks?|twikns?|tiwnks?|wtinks?|twinkks?|twiinks?|ttwinks?|twwinks?|twinnks?|twnks?|twiks?)\b
-a clanker=\b(clankers?|clunkers?|clankres?|clanekrs?|clakners?|clnakers?|calnkers?|lcankers?|claankers?|cllankers?|clankkers?|klankers?|clankrs?|clankes?)\b
-a fucker=\b(fuckers?|fukcers?|fcukers?|fuckrs?|fuckesr?)\b
-a motherfucker=\b(m(o|u)th(er|a)fuckers?|motherfukcers?|motherfcukers?|mtoherfuckers?|mothefuckers?|motherfuckrs?)\b
-a moron=\b(morons?|mornos?|moorns?|mroons?|morno?s?)\b'
+a twink=\b(twinks?|twniks?|twikns?|tiwnks?|wtinks?|twinkks?|twiinks?|ttwinks?|twwinks?|twinnks?|twnks?|twiks?)\b=@\btwinks?\b
+a clanker=\b(clankers?|clunkers?|clankres?|clanekrs?|clakners?|clnakers?|calnkers?|lcankers?|claankers?|cllankers?|clankkers?|klankers?|clankrs?|clankes?)\b=@\b(clankers?|clunkers?)\b
+a fucker=\b(fuckers?|fukcers?|fcukers?|fuckrs?|fuckesr?)\b=@\bfuckers?\b
+a motherfucker=\b(m(o|u)th(er|a)fuckers?|motherfukcers?|motherfcukers?|mtoherfuckers?|mothefuckers?|motherfuckrs?)\b=@\bm(o|u)th(er|a)fuckers?\b
+a moron=\b(morons?|mornos?|moorns?|mroons?|morno?s?)\b=@\bmorons?\b'
 
 # The count a tally is scaled against, so it runs green -> yellow -> red on the
 # same thresholds as the meters: yellow from half of it, red from 80% of it.
@@ -167,6 +168,7 @@ TALLY_FLAME_MAX=5
 #          there are enough others to concede it against
 #   mono   parenthesised after the largest count, and only when it has run
 #          away with the row
+#   typo   parenthesised after a count the typing keeps getting wrong
 #
 # A placement with nothing to land on is dropped before the draw rather than
 # after, so the rest still share the odds. big draws per count instead of with
@@ -194,7 +196,8 @@ big=no fewer than
 big=a grand total of
 lone=(can'\''t object to that one)
 mono=(you should change it up)
-mono=(how original)'
+mono=(how original)
+typo=(struggling with this one)'
 
 # The count from which "just" reads as understatement rather than description,
 # and how often one of those counts gets it. Rolled per count, so this is not
@@ -208,6 +211,11 @@ TALLY_BIG_CHANCE=25
 TALLY_LONE_AT=1
 TALLY_LONE_CROWD=3
 TALLY_MONO_AT=60
+
+# A word is being fumbled once this many of its hits are misspellings and they
+# are this large a share of them.
+TALLY_TYPO_MIN=2
+TALLY_TYPO_AT=30
 
 # Percentage of tallies that get an aside: TALLY_JOKE_MIN at a single hit,
 # rising in a straight line to TALLY_JOKE_MAX at TALLY_JOKE_FULL of them, and
@@ -292,8 +300,9 @@ tally_words() {
 	printf '%s\n' "$TALLY_WORDS" | jq -Rn '[
 		inputs
 		| select(length > 0)
-		| split("=")
-		| {label: .[0], re: (.[1:] | join("="))}
+		| split("=") as $parts
+		| ($parts[1:] | join("=") | split("=@")) as $re
+		| {label: $parts[0], re: $re[0], canon: ($re[1] // "")}
 	]'
 }
 
@@ -348,11 +357,20 @@ tally_scan() {
 				.
 			end) | .out) as $msgs
 		| [$msgs[] as $m | [$words[] | .re as $re | $m | [match($re; "gi")] | length]] as $hits
+		# -1 where the word tracks no typos at all, so that it cannot be read
+		# as every one of them having been mistyped.
+		| [$msgs[] as $m | [$words[]
+			| if .canon == "" then -1 else .canon as $c | $m | [match($c; "gi")] | length end]] as $right
 		| [
 			($msgs | length),
 			($hits | reverse | map(add > 0) | (index(false) // length))
 		]
-		+ [range(0; $words | length) as $i | $hits | map(.[$i]) | add // 0]
+		+ [
+			range(0; $words | length) as $i
+			| ($hits | map(.[$i]) | add // 0),
+			  (if ($right | map(.[$i]) | min) < 0 then -1
+			   else ($right | map(.[$i]) | add // 0) end)
+		]
 		| @tsv
 	' "$1" 2>/dev/null
 }
@@ -423,12 +441,27 @@ if [ -n "$transcript" ] && [ -f "$transcript" ]; then
 	shown=0
 	top=0
 	lones=0
-	for n in "$@"; do
-		if [ "$n" -gt 0 ]; then
-			total=$((total + n))
+	fumbled=0
+	pos=0
+	held=0
+	for v in "$@"; do
+		pos=$((pos + 1))
+		# The scan emits a hit count and a spelt-right count per word.
+		if [ $((pos % 2)) -eq 1 ]; then
+			held=$v
+			continue
+		fi
+		if [ "$held" -gt 0 ]; then
+			total=$((total + held))
 			shown=$((shown + 1))
-			[ "$n" -gt "$top" ] && top=$n
-			[ "$n" -le "$TALLY_LONE_AT" ] && lones=$((lones + 1))
+			[ "$held" -gt "$top" ] && top=$held
+			[ "$held" -le "$TALLY_LONE_AT" ] && lones=$((lones + 1))
+
+			# -1 means the word has no typos to get wrong.
+			if [ "$v" -ge 0 ] && [ $((held - v)) -ge "$TALLY_TYPO_MIN" ] &&
+				[ $(((held - v) * 100 / held)) -ge "$TALLY_TYPO_AT" ]; then
+				fumbled=$((fumbled + 1))
+			fi
 		fi
 	done
 
@@ -438,6 +471,7 @@ if [ -n "$transcript" ] && [ -f "$transcript" ]; then
 	[ "$lones" -gt 0 ] && [ "$shown" -ge "$TALLY_LONE_CROWD" ] || skip="${skip}|lone"
 	[ "$shown" -ge 2 ] && [ "$total" -gt 0 ] &&
 		[ $((top * 100 / total)) -ge "$TALLY_MONO_AT" ] || skip="${skip}|mono"
+	[ "$fumbled" -gt 0 ] || skip="${skip}|typo"
 
 	joke=$(tally_joke "$total" "$skip")
 	kind=${joke%%=*}
@@ -453,6 +487,7 @@ if [ -n "$transcript" ] && [ -f "$transcript" ]; then
 	# Only ever the first count holding the maximum, so a tie does not put the
 	# same remark on two of them.
 	mono) target=1 ;;
+	typo) [ "$fumbled" -gt 0 ] && target=$(($(tally_hash $((total + 1))) % fumbled + 1)) ;;
 	esac
 
 	# "you called me a retard 4x and a rat 1x", listing only the words used.
@@ -464,9 +499,12 @@ if [ -n "$transcript" ] && [ -f "$transcript" ]; then
 	seen=0
 	lseen=0
 	mseen=0
+	fseen=0
 	while IFS='=' read -r label _; do
 		[ -n "$label" ] || continue
 		n=${1:-0}
+		right=${2:--1}
+		[ $# -gt 0 ] && shift
 		[ $# -gt 0 ] && shift
 		if [ "$n" -gt 0 ]; then
 			seen=$((seen + 1))
@@ -504,6 +542,13 @@ if [ -n "$transcript" ] && [ -f "$transcript" ]; then
 					tseen=$mseen
 				fi
 				;;
+			(typo)
+				if [ "$right" -ge 0 ] && [ $((n - right)) -ge "$TALLY_TYPO_MIN" ] &&
+					[ $(((n - right) * 100 / n)) -ge "$TALLY_TYPO_AT" ]; then
+					fseen=$((fseen + 1))
+					tseen=$fseen
+				fi
+				;;
 			esac
 
 			if [ "$tseen" -eq "$target" ]; then
@@ -517,7 +562,7 @@ if [ -n "$transcript" ] && [ -f "$transcript" ]; then
 					fi
 					entry="${entry} ${C_DIM}${text%\%s*}${ord}${text#*\%s}${C_OFF}"
 					;;
-				(lone | mono) entry="${entry} ${C_DIM}${text}${C_OFF}" ;;
+				(lone | mono | typo) entry="${entry} ${C_DIM}${text}${C_OFF}" ;;
 				esac
 			fi
 
