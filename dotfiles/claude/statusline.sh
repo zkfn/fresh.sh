@@ -138,6 +138,13 @@ TALLY_PREFIX='you called me'
 TALLY_STREAK_MIN=4
 TALLY_STREAK_FULL=10
 
+# A long streak gets flanked by flames: the first pair at TALLY_STREAK_FLAME,
+# another every TALLY_STREAK_FLAME_STEP after, up to TALLY_STREAK_FLAME_MAX a
+# side.
+TALLY_STREAK_FLAME=8
+TALLY_STREAK_FLAME_STEP=4
+TALLY_STREAK_FLAME_MAX=2
+
 # Flames once the session averages this many hits per message, in tenths
 # because sh has no floats, and one more flame per further multiple of it.
 TALLY_FLAME_AT=8
@@ -427,7 +434,18 @@ EOF
 		fi
 
 		if [ "$streak" -ge "$TALLY_STREAK_MIN" ]; then
-			tally="${tally}${C_DIM} · streak${C_OFF} $(heat $((streak * 100 / TALLY_STREAK_FULL)))${streak}${C_OFF}"
+			wings=""
+			if [ "$streak" -ge "$TALLY_STREAK_FLAME" ]; then
+				sn=$((1 + (streak - TALLY_STREAK_FLAME) / TALLY_STREAK_FLAME_STEP))
+				[ "$sn" -gt "$TALLY_STREAK_FLAME_MAX" ] && sn=$TALLY_STREAK_FLAME_MAX
+				while [ "$sn" -gt 0 ]; do
+					wings="${wings}🔥"
+					sn=$((sn - 1))
+				done
+			fi
+
+			tally="${tally}${C_DIM} · ${C_OFF}${wings:+$wings }${C_DIM}streak${C_OFF}"
+			tally="${tally} $(heat $((streak * 100 / TALLY_STREAK_FULL)))${streak}${C_OFF}${wings:+ $wings}"
 		fi
 
 		# Flames lead the row, one per multiple of the average threshold.
