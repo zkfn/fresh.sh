@@ -159,6 +159,20 @@ TALLY_FLAME_MAX=5
 #          from inside that count so it can never name a later one
 #   big    slipped in front of a count, and only offered a count large enough
 #          for the understatement to land
+#   lone   parenthesised after a count small enough to concede, and only when
+#          there are enough others to concede it against
+#   mono   appended like end, but only when one count has run away with the row
+#
+# A placement with nothing to land on is dropped before the draw rather than
+# after, so the rest still share the odds. big draws per count instead of with
+# the row, so several counts can carry one at once. An apostrophe has to be
+# written '\'' in this list: it is one single-quoted string.
+#   lone   parenthesised after a count small enough to concede, and only once
+#          there are enough other counts to concede it against
+#
+# big and lone draw per count rather than with the row, so several can appear
+# at once and alongside whatever the row itself drew. An apostrophe has to be
+# written '\'' here: the list is one single-quoted string.
 TALLY_JOKES='end=, and i deserved all of it
 end=, but who is counting
 end=, none of it inaccurate
@@ -175,13 +189,22 @@ big=merely
 big=all of
 big=precisely
 big=no fewer than
-big=a grand total of'
+big=a grand total of
+lone=(can'\''t object to that one)
+mono=, and you should change it up'
 
 # The count from which "just" reads as understatement rather than description,
 # and how often one of those counts gets it. Rolled per count, so this is not
 # competing with the row's own aside.
 TALLY_JUST_AT=8
 TALLY_BIG_CHANCE=25
+
+# A count at or under TALLY_LONE_AT can be conceded, but only with at least
+# TALLY_LONE_CROWD counts on the row to concede it against. And one count
+# holding TALLY_MONO_AT percent of the row has run away with it.
+TALLY_LONE_AT=1
+TALLY_LONE_CROWD=3
+TALLY_MONO_AT=60
 
 # Percentage of tallies that get an aside: TALLY_JOKE_MIN at a single hit,
 # rising in a straight line to TALLY_JOKE_MAX at TALLY_JOKE_FULL of them, and
@@ -222,6 +245,7 @@ ordinal() {
 # kept between renders.
 tally_joke() {
 	h=$(tally_hash "$1")
+	skip=$2
 
 	chance=$((TALLY_JOKE_MIN + ($1 - 1) * (TALLY_JOKE_MAX - TALLY_JOKE_MIN) / (TALLY_JOKE_FULL - 1)))
 	[ "$chance" -gt "$TALLY_JOKE_MAX" ] && chance=$TALLY_JOKE_MAX
@@ -232,7 +256,7 @@ tally_joke() {
 	# Drop the lines the tally has not earned yet before drawing, so the ones
 	# still in play share the odds evenly rather than losing a turn to a line
 	# that had nothing to say.
-	earned=$(printf '%s\n' "$TALLY_JOKES" | grep . | grep -v '^big=' | while IFS= read -r line; do
+	earned=$(printf '%s\n' "$TALLY_JOKES" | grep . | grep -Ev "^(${skip})=" | while IFS= read -r line; do
 		placement=${line%%=*}
 		# The pattern needs its opening paren: inside $( ) an unbalanced one
 		# ends the substitution as far as the parser is concerned.
@@ -394,24 +418,35 @@ if [ -n "$transcript" ] && [ -f "$transcript" ]; then
 
 	total=0
 	shown=0
-	bigs=0
+	top=0
+	lones=0
 	for n in "$@"; do
 		if [ "$n" -gt 0 ]; then
 			total=$((total + n))
 			shown=$((shown + 1))
+			[ "$n" -gt "$top" ] && top=$n
+			[ "$n" -le "$TALLY_LONE_AT" ] && lones=$((lones + 1))
 		fi
 	done
 
-	joke=$(tally_joke "$total")
+	# Placements with nothing to say about this particular row, dropped before
+	# the draw. big is always here: it draws per count further down instead.
+	skip=big
+	[ "$lones" -gt 0 ] && [ "$shown" -ge "$TALLY_LONE_CROWD" ] || skip="${skip}|lone"
+	[ "$shown" -ge 2 ] && [ "$total" -gt 0 ] &&
+		[ $((top * 100 / total)) -ge "$TALLY_MONO_AT" ] || skip="${skip}|mono"
+
+	joke=$(tally_joke "$total" "$skip")
 	kind=${joke%%=*}
 	kind=${kind%@*}
 	text=${joke#*=}
 
-	# Which count a parenthetical attaches to. Nothing shown means no aside
-	# rather than a misplaced one.
+	# Which count a parenthetical attaches to, counted over the ones its kind
+	# is allowed to land on.
 	target=0
 	case "$kind" in
 	count) [ "$shown" -gt 0 ] && target=$(($(tally_hash $((total + 1))) % shown + 1)) ;;
+	lone) [ "$lones" -gt 0 ] && target=$(($(tally_hash $((total + 1))) % lones + 1)) ;;
 	esac
 
 	# "you called me a retard 4x and a rat 1x", listing only the words used.
@@ -421,6 +456,7 @@ if [ -n "$transcript" ] && [ -f "$transcript" ]; then
 	names=""
 	last=""
 	seen=0
+	lseen=0
 	while IFS='=' read -r label _; do
 		[ -n "$label" ] || continue
 		n=${1:-0}
@@ -443,9 +479,28 @@ if [ -n "$transcript" ] && [ -f "$transcript" ]; then
 
 			entry="${C_DIM}${article}${C_OFF} ${hue}${word}${C_OFF} ${C_DIM}${just}${C_OFF}${hue}${n}x${C_OFF}"
 
-			if [ "$kind" = count ] && [ "$seen" -eq "$target" ] && [ "$target" -gt 0 ]; then
-				ord=$(ordinal $(($(tally_hash $((total + 2))) % n + 1)))
-				entry="${entry} ${C_DIM}${text%\%s*}${ord}${text#*\%s}${C_OFF}"
+			# A parenthetical counts off only the entries its kind may land on,
+			# so "lone" reaches the first small count rather than the first
+			# count outright. Zero never matches a target, which starts at one.
+			tseen=0
+			case "$kind" in
+			(count) tseen=$seen ;;
+			(lone)
+				if [ "$n" -le "$TALLY_LONE_AT" ]; then
+					lseen=$((lseen + 1))
+					tseen=$lseen
+				fi
+				;;
+			esac
+
+			if [ "$tseen" -eq "$target" ]; then
+				case "$kind" in
+				(count)
+					ord=$(ordinal $(($(tally_hash $((total + 2))) % n + 1)))
+					entry="${entry} ${C_DIM}${text%\%s*}${ord}${text#*\%s}${C_OFF}"
+					;;
+				(lone) entry="${entry} ${C_DIM}${text}${C_OFF}" ;;
+				esac
 			fi
 
 			if [ -n "$last" ]; then
@@ -478,7 +533,7 @@ EOF
 		# the streak: after it, the comma would read as tying the remark to the
 		# streak rather than to the list. The other placements have already
 		# been made against their count.
-		if [ "$kind" = end ]; then
+		if [ "$kind" = end ] || [ "$kind" = mono ]; then
 			tally="${tally}${C_DIM}${text}${C_OFF}"
 		fi
 
