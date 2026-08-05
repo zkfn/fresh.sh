@@ -161,18 +161,13 @@ TALLY_FLAME_MAX=5
 #          for the understatement to land
 #   lone   parenthesised after a count small enough to concede, and only when
 #          there are enough others to concede it against
-#   mono   appended like end, but only when one count has run away with the row
+#   mono   parenthesised after the largest count, and only when it has run
+#          away with the row
 #
 # A placement with nothing to land on is dropped before the draw rather than
 # after, so the rest still share the odds. big draws per count instead of with
 # the row, so several counts can carry one at once. An apostrophe has to be
 # written '\'' in this list: it is one single-quoted string.
-#   lone   parenthesised after a count small enough to concede, and only once
-#          there are enough other counts to concede it against
-#
-# big and lone draw per count rather than with the row, so several can appear
-# at once and alongside whatever the row itself drew. An apostrophe has to be
-# written '\'' here: the list is one single-quoted string.
 TALLY_JOKES='end=, and i deserved all of it
 end=, but who is counting
 end=, none of it inaccurate
@@ -191,8 +186,8 @@ big=precisely
 big=no fewer than
 big=a grand total of
 lone=(can'\''t object to that one)
-mono=, and you should change it up
-mono=, how original'
+mono=(you should change it up)
+mono=(how original)'
 
 # The count from which "just" reads as understatement rather than description,
 # and how often one of those counts gets it. Rolled per count, so this is not
@@ -448,6 +443,9 @@ if [ -n "$transcript" ] && [ -f "$transcript" ]; then
 	case "$kind" in
 	count) [ "$shown" -gt 0 ] && target=$(($(tally_hash $((total + 1))) % shown + 1)) ;;
 	lone) [ "$lones" -gt 0 ] && target=$(($(tally_hash $((total + 1))) % lones + 1)) ;;
+	# Only ever the first count holding the maximum, so a tie does not put the
+	# same remark on two of them.
+	mono) target=1 ;;
 	esac
 
 	# "you called me a retard 4x and a rat 1x", listing only the words used.
@@ -458,6 +456,7 @@ if [ -n "$transcript" ] && [ -f "$transcript" ]; then
 	last=""
 	seen=0
 	lseen=0
+	mseen=0
 	while IFS='=' read -r label _; do
 		[ -n "$label" ] || continue
 		n=${1:-0}
@@ -492,6 +491,12 @@ if [ -n "$transcript" ] && [ -f "$transcript" ]; then
 					tseen=$lseen
 				fi
 				;;
+			(mono)
+				if [ "$n" -eq "$top" ]; then
+					mseen=$((mseen + 1))
+					tseen=$mseen
+				fi
+				;;
 			esac
 
 			if [ "$tseen" -eq "$target" ]; then
@@ -500,7 +505,7 @@ if [ -n "$transcript" ] && [ -f "$transcript" ]; then
 					ord=$(ordinal $(($(tally_hash $((total + 2))) % n + 1)))
 					entry="${entry} ${C_DIM}${text%\%s*}${ord}${text#*\%s}${C_OFF}"
 					;;
-				(lone) entry="${entry} ${C_DIM}${text}${C_OFF}" ;;
+				(lone | mono) entry="${entry} ${C_DIM}${text}${C_OFF}" ;;
 				esac
 			fi
 
@@ -534,7 +539,7 @@ EOF
 		# the streak: after it, the comma would read as tying the remark to the
 		# streak rather than to the list. The other placements have already
 		# been made against their count.
-		if [ "$kind" = end ] || [ "$kind" = mono ]; then
+		if [ "$kind" = end ]; then
 			tally="${tally}${C_DIM}${text}${C_OFF}"
 		fi
 
