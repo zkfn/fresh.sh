@@ -108,7 +108,8 @@ countdown() {
 # typing it in a hurry produces.
 TALLY_WORDS='a retard=retard|retrad|retadr|retatd|retartd|retaard|reatrd|reetard|ratard|rtard|retarted
 a rat=\brat\b
-a faggot=\bfag(got)?s?\b'
+a faggot=\bfag(got)?s?\b
+a twink=\btwinks?\b'
 
 # The count a tally is scaled against, so it runs green -> yellow -> red on the
 # same thresholds as the meters: yellow from half of it, red from 80% of it.
@@ -128,6 +129,72 @@ TALLY_STREAK_FULL=5
 # because sh has no floats, and one more flame per further multiple of it.
 TALLY_FLAME_AT=8
 TALLY_FLAME_MAX=5
+
+# Asides shown now and then, as "placement=text":
+#   end    appended to the row as it stands, so it brings its own punctuation
+#   count  parenthesised after one of the counts, %s being an ordinal drawn
+#          from inside that count so it can never name a later one
+#   big    slipped in front of a count, and only offered a count large enough
+#          for the understatement to land
+TALLY_JOKES='end=, and i deserved all of it
+end=, but who is counting
+end=, the last one stung
+count=(%s one was unfair)
+big=just'
+
+# The count from which "just" reads as understatement rather than description.
+TALLY_JUST_AT=8
+
+# Percentage of tallies that get an aside: TALLY_JOKE_MIN at a single hit,
+# rising in a straight line to TALLY_JOKE_MAX at TALLY_JOKE_FULL of them, and
+# level from there on.
+TALLY_JOKE_MIN=4
+TALLY_JOKE_MAX=50
+TALLY_JOKE_FULL=50
+
+# A scattered value from $1, for the choices that have to hold still while the
+# tally does. Knuth's multiplicative hash, then an xor-fold: a plain LCG step is
+# linear in $1 and its multiplier shares a factor with the modulus, so the low
+# digits march rather than scatter, and the fold is what breaks that up.
+tally_hash() {
+	h=$(($1 * 2654435761 + 12345))
+	h=$(((h / 65536) ^ h))
+	printf '%d' $((h % 100000))
+}
+
+# 1 -> 1st, 3 -> 3rd, 11 -> 11th, 22 -> 22nd.
+ordinal() {
+	case $(($1 % 100)) in
+	11 | 12 | 13) printf '%dth' "$1" ;;
+	*)
+		case $(($1 % 10)) in
+		1) printf '%dst' "$1" ;;
+		2) printf '%dnd' "$1" ;;
+		3) printf '%drd' "$1" ;;
+		*) printf '%dth' "$1" ;;
+		esac
+		;;
+	esac
+}
+
+# The joke for a given tally, or nothing. Keyed to the count in $1 rather than
+# drawn at random: the status line redraws on every event, sometimes twice in a
+# second, so a per-render coin flip would strobe. This way the line is fixed
+# for as long as the tally is, changes the moment it moves, and needs no state
+# kept between renders.
+tally_joke() {
+	h=$(tally_hash "$1")
+
+	chance=$((TALLY_JOKE_MIN + ($1 - 1) * (TALLY_JOKE_MAX - TALLY_JOKE_MIN) / (TALLY_JOKE_FULL - 1)))
+	[ "$chance" -gt "$TALLY_JOKE_MAX" ] && chance=$TALLY_JOKE_MAX
+	[ "$chance" -lt "$TALLY_JOKE_MIN" ] && chance=$TALLY_JOKE_MIN
+
+	[ $((h % 100)) -lt "$chance" ] || return 0
+
+	count=$(printf '%s\n' "$TALLY_JOKES" | grep -c .) || count=0
+	[ "$count" -gt 0 ] || return 0
+	printf '%s\n' "$TALLY_JOKES" | grep . | sed -n "$((h / 100 % count + 1))p"
+}
 
 # TALLY_WORDS as JSON, for the scan below to iterate.
 tally_words() {
@@ -233,26 +300,66 @@ if [ -n "$transcript" ] && [ -f "$transcript" ]; then
 	[ -n "$msgs" ] || msgs=0
 	[ -n "$streak" ] || streak=0
 
+	# The counts, in TALLY_WORDS order, so the loop below can walk them rather
+	# than re-cut the scan for every word.
+	set -- $(printf '%s' "$scan" | cut -f3-)
+
+	total=0
+	shown=0
+	bigs=0
+	for n in "$@"; do
+		if [ "$n" -gt 0 ]; then
+			total=$((total + n))
+			shown=$((shown + 1))
+			[ "$n" -ge "$TALLY_JUST_AT" ] && bigs=$((bigs + 1))
+		fi
+	done
+
+	joke=$(tally_joke "$total")
+	kind=${joke%%=*}
+	text=${joke#*=}
+
+	# Which count an aside attaches to, counted over the ones it is allowed to
+	# land on: any of them for a parenthetical, only the large ones for "just".
+	# Nothing eligible means no aside rather than a misplaced one.
+	target=0
+	case "$kind" in
+	count) [ "$shown" -gt 0 ] && target=$(($(tally_hash $((total + 1))) % shown + 1)) ;;
+	big) [ "$bigs" -gt 0 ] && target=$(($(tally_hash $((total + 1))) % bigs + 1)) ;;
+	esac
+
 	# "you called me a retard 4x and a rat 1x", listing only the words used.
 	# Only the counts carry colour; the prose around them stays out of the way.
 	# One entry is held back so the last one can be joined with "and" rather
 	# than a comma.
 	names=""
 	last=""
-	total=0
-	shown=0
-	field=2
+	seen=0
+	bseen=0
 	while IFS='=' read -r label _; do
 		[ -n "$label" ] || continue
-		field=$((field + 1))
-		n=$(printf '%s' "$scan" | cut -f"$field")
-		[ -n "$n" ] || n=0
+		n=${1:-0}
+		[ $# -gt 0 ] && shift
 		if [ "$n" -gt 0 ]; then
-			total=$((total + n))
-			shown=$((shown + 1))
+			seen=$((seen + 1))
+			[ "$n" -ge "$TALLY_JUST_AT" ] && bseen=$((bseen + 1))
 			article=${label%% *}
 			word=${label#* }
-			entry="${C_DIM}${article}${C_OFF} $(heat $((n * 100 / TALLY_FULL)))${word} ${n}x${C_OFF}"
+			hue=$(heat $((n * 100 / TALLY_FULL)))
+
+			# "just" reads as prose, so it stays out of the count's colour.
+			just=""
+			if [ "$kind" = big ] && [ "$n" -ge "$TALLY_JUST_AT" ] && [ "$bseen" -eq "$target" ]; then
+				just="${text} "
+			fi
+
+			entry="${C_DIM}${article}${C_OFF} ${hue}${word}${C_OFF} ${C_DIM}${just}${C_OFF}${hue}${n}x${C_OFF}"
+
+			if [ "$kind" = count ] && [ "$seen" -eq "$target" ] && [ "$target" -gt 0 ]; then
+				ord=$(ordinal $(($(tally_hash $((total + 2))) % n + 1)))
+				entry="${entry} ${C_DIM}${text%\%s*}${ord}${text#*\%s}${C_OFF}"
+			fi
+
 			if [ -n "$last" ]; then
 				names="${names:+${names}${C_DIM},${C_OFF} }${last}"
 			fi
@@ -276,6 +383,11 @@ EOF
 
 		if [ "$streak" -ge "$TALLY_STREAK_MIN" ]; then
 			tally="${tally}${C_DIM} · streak${C_OFF} $(heat $((streak * 100 / TALLY_STREAK_FULL)))${streak}${C_OFF}"
+		fi
+
+		# The other placements have already been made against their count.
+		if [ "$kind" = end ]; then
+			tally="${tally}${C_DIM}${text}${C_OFF}"
 		fi
 
 		# Flames lead the row, one per multiple of the average threshold.
