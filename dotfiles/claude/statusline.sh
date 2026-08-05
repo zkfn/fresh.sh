@@ -158,8 +158,9 @@ TALLY_FLAME_MAX=5
 #   pre    slipped between "you called me" and the list, to qualify the whole
 #          accusation before it is made
 #   end    appended to the row as it stands, so it brings its own punctuation
-#   count  parenthesised after one of the counts, %s being an ordinal drawn
-#          from inside that count so it can never name a later one
+#   count  parenthesised after one of the counts, %s naming one of them: an
+#          ordinal drawn from inside that count so it can never name a later
+#          one, or "that one" where there has only been the one
 #   big    slipped in front of a count, and only offered a count large enough
 #          for the understatement to land
 #   lone   parenthesised after a count small enough to concede, and only when
@@ -178,11 +179,11 @@ end=, and the tests still pass
 end=, and you should call me more
 end@40=, impressive!
 pre=(allegedly)
-count=(%s one was unfair)
-count=(%s one was fair)
-count=(the %s was the funniest)
-count=(the %s was my favourite)
-count=(i still think about the %s)
+count=(%s was unfair)
+count=(%s was fair)
+count=(%s was the funniest)
+count=(%s was my favourite)
+count=(i still think about %s)
 big=just
 big=only
 big=barely
@@ -508,7 +509,12 @@ if [ -n "$transcript" ] && [ -f "$transcript" ]; then
 			if [ "$tseen" -eq "$target" ]; then
 				case "$kind" in
 				(count)
-					ord=$(ordinal $(($(tally_hash $((total + 2))) % n + 1)))
+					# Singling one out of a count of one is just that one.
+					if [ "$n" -eq 1 ]; then
+						ord="that one"
+					else
+						ord="the $(ordinal $(($(tally_hash $((total + 2))) % n + 1))) one"
+					fi
 					entry="${entry} ${C_DIM}${text%\%s*}${ord}${text#*\%s}${C_OFF}"
 					;;
 				(lone | mono) entry="${entry} ${C_DIM}${text}${C_OFF}" ;;
