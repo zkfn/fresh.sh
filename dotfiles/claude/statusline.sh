@@ -207,31 +207,55 @@ tally_words() {
 }
 
 # "messages<TAB>streak<TAB>count..." with one count per word in TALLY_WORDS
-# order, from a single streaming pass over the transcript. Prompts are entries
-# of type user with no toolUseResult; anything sent while a turn is running is
-# only ever recorded as queued content, so both are read. Assistant turns and
-# tool results are not, so the words only count when they come from the
-# keyboard. Task notifications and interrupt markers are injected rather than
-# typed, so they are dropped before they can dilute the per-message average.
+# order, from a single streaming pass over the transcript. What was typed is
+# the entries of type user with no toolUseResult; assistant turns and tool
+# results are not, so the words only count when they come from the keyboard.
+# Task notifications and interrupt markers are injected rather than typed, so
+# they are dropped before they can dilute the per-message average.
+#
+# A message sent mid-turn is logged as a queue-operation, and most of them are
+# recorded nowhere else, so those have to be read too or the bulk of what was
+# typed during a turn goes uncounted. A few do get mirrored by a user entry a
+# few seconds later, though, and reading both counted those twice: doubled word
+# counts, and a lone slur passing for a streak. So a queued message is only
+# taken when no user entry carries the same text.
 tally_scan() {
 	jq -rn --argjson words "$2" '
 		def typed:
 			if .type == "user" and .toolUseResult == null then
-				.message.content
-				| if type == "string" then . else
-					[.[] | select(.type == "text") | .text] | join("\n")
-				end
+				{src: "user", text: (.message.content
+					| if type == "string" then . else
+						[.[] | select(.type == "text") | .text] | join("\n")
+					end)}
 			elif .type == "queue-operation" and .operation == "enqueue" then
-				.content
+				{src: "queued", text: .content}
 			else
 				empty
 			end;
 
 		[ inputs
 		| typed
-		| select(type == "string" and . != "")
-		| select(startswith("<") or test("^\\[Request interrupted") | not)
-		] as $msgs
+		| select(.text | type == "string" and . != "")
+		| select(.text | startswith("<") or test("^\\[Request interrupted") | not)
+		] as $all
+
+		# How often each text was typed, and how often it was queued. A queued
+		# message counts only for the surplus the user entries do not cover, so
+		# the mirrored ones are read once and the rest still land.
+		| (reduce ($all[] | select(.src == "user") | .text) as $t
+			({}; .[$t] = (.[$t] // 0) + 1)) as $mirrored
+		| (reduce ($all[] | select(.src == "queued") | .text) as $t
+			({}; .[$t] = (.[$t] // 0) + 1)) as $queued
+		| (reduce $all[] as $e ({out: [], taken: {}};
+			if $e.src == "user" then
+				.out += [$e.text]
+			elif (.taken[$e.text] // 0)
+				< ($queued[$e.text] - ($mirrored[$e.text] // 0)) then
+				.out += [$e.text]
+				| .taken[$e.text] = (.taken[$e.text] // 0) + 1
+			else
+				.
+			end) | .out) as $msgs
 		| [$msgs[] as $m | [$words[] | .re as $re | $m | [match($re; "gi")] | length]] as $hits
 		| [
 			($msgs | length),
