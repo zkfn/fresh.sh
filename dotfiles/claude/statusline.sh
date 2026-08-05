@@ -135,8 +135,8 @@ TALLY_PREFIX='you called me'
 
 # Messages in a row, each with at least one hit, before the streak is shown and
 # the count a streak is scaled against.
-TALLY_STREAK_MIN=2
-TALLY_STREAK_FULL=5
+TALLY_STREAK_MIN=4
+TALLY_STREAK_FULL=10
 
 # Flames once the session averages this many hits per message, in tenths
 # because sh has no floats, and one more flame per further multiple of it.
