@@ -1,6 +1,7 @@
 #!/bin/sh
-# Claude Code status line. Reads the session JSON on stdin, prints one line.
-# Shows: dir (+ worktree) and branch on top; context, session and weekly meters below.
+# Claude Code status line. Reads the session JSON on stdin, prints up to three
+# rows: dir (+ worktree) and branch; context, session and weekly meters; and
+# the tally of what the session has called Claude.
 set -eu
 
 # gruvbox-material, matching the tmux status bar
@@ -32,7 +33,8 @@ fields=$(printf '%s' "$input" | jq -r '[
 	(.rate_limits.five_hour.used_percentage // -1 | floor),
 	(.rate_limits.five_hour.resets_at // -1 | floor),
 	(.rate_limits.seven_day.used_percentage // -1 | floor),
-	(.rate_limits.seven_day.resets_at // -1 | floor)
+	(.rate_limits.seven_day.resets_at // -1 | floor),
+	(.transcript_path // "")
 ] | @tsv')
 
 dir=$(printf '%s' "$fields" | cut -f1)
@@ -41,6 +43,7 @@ session=$(printf '%s' "$fields" | cut -f3)
 resets_at=$(printf '%s' "$fields" | cut -f4)
 week=$(printf '%s' "$fields" | cut -f5)
 week_resets=$(printf '%s' "$fields" | cut -f6)
+transcript=$(printf '%s' "$fields" | cut -f7)
 
 # Colour by how close to full something is.
 heat() {
@@ -96,10 +99,87 @@ countdown() {
 	fi
 }
 
+# One "label=regex" per line. The label carries its own article so that adding
+# e.g. "an idiot" still reads right. The regex is Oniguruma, applied by jq
+# case-insensitively; \b behaves the same there on every platform, unlike in
+# BSD and GNU grep. "rat" and "fag" need those boundaries or they fire on
+# "separate" and "flags"; "retard" is left unanchored so that "retarded" and
+# "retards" count too, and carries the transpositions and dropped letters that
+# typing it in a hurry produces.
+TALLY_WORDS='a retard=retard|retrad|retadr|retatd|retartd|retaard|reatrd|reetard|ratard|rtard|retarted
+a rat=\brat\b
+a faggot=\bfag(got)?s?\b'
+
+# The count a tally is scaled against, so it runs green -> yellow -> red on the
+# same thresholds as the meters: yellow from half of it, red from 80% of it.
+TALLY_FULL=6
+
+# Reads from Claude's side, so "you" is whoever typed and "me" is Claude. The
+# pronouns are what fix the direction: without them the row can be read as
+# Claude keeping score of the names it called the user.
+TALLY_PREFIX='you called me'
+
+# Messages in a row, each with at least one hit, before the streak is shown and
+# the count a streak is scaled against.
+TALLY_STREAK_MIN=2
+TALLY_STREAK_FULL=5
+
+# Flames once the session averages this many hits per message, in tenths
+# because sh has no floats, and one more flame per further multiple of it.
+TALLY_FLAME_AT=8
+TALLY_FLAME_MAX=5
+
+# TALLY_WORDS as JSON, for the scan below to iterate.
+tally_words() {
+	printf '%s\n' "$TALLY_WORDS" | jq -Rn '[
+		inputs
+		| select(length > 0)
+		| split("=")
+		| {label: .[0], re: (.[1:] | join("="))}
+	]'
+}
+
+# "messages<TAB>streak<TAB>count..." with one count per word in TALLY_WORDS
+# order, from a single streaming pass over the transcript. Prompts are entries
+# of type user with no toolUseResult; anything sent while a turn is running is
+# only ever recorded as queued content, so both are read. Assistant turns and
+# tool results are not, so the words only count when they come from the
+# keyboard. Task notifications and interrupt markers are injected rather than
+# typed, so they are dropped before they can dilute the per-message average.
+tally_scan() {
+	jq -rn --argjson words "$2" '
+		def typed:
+			if .type == "user" and .toolUseResult == null then
+				.message.content
+				| if type == "string" then . else
+					[.[] | select(.type == "text") | .text] | join("\n")
+				end
+			elif .type == "queue-operation" and .operation == "enqueue" then
+				.content
+			else
+				empty
+			end;
+
+		[ inputs
+		| typed
+		| select(type == "string" and . != "")
+		| select(startswith("<") or test("^\\[Request interrupted") | not)
+		] as $msgs
+		| [$msgs[] as $m | [$words[] | .re as $re | $m | [match($re; "gi")] | length]] as $hits
+		| [
+			($msgs | length),
+			($hits | reverse | map(add > 0) | (index(false) // length))
+		]
+		+ [range(0; $words | length) as $i | $hits | map(.[$i]) | add // 0]
+		| @tsv
+	' "$1" 2>/dev/null
+}
+
 # Claude Code keeps every non-empty line of stdout: location gets the top row,
-# the meters the one below it.
+# the meters the one below it, the tally the one below that.
 location=""
 meters=""
+tally=""
 
 # Meters sit side by side on the lower row, separated by whitespace alone.
 add_meter() {
@@ -146,6 +226,72 @@ if git_dir=$(git -C "${dir:-.}" --no-optional-locks rev-parse --git-dir 2>/dev/n
 	add "${C_YELLOW}${branch}${dirty}${C_OFF}${worktree}"
 fi
 
+if [ -n "$transcript" ] && [ -f "$transcript" ]; then
+	scan=$(tally_scan "$transcript" "$(tally_words)")
+	msgs=$(printf '%s' "$scan" | cut -f1)
+	streak=$(printf '%s' "$scan" | cut -f2)
+	[ -n "$msgs" ] || msgs=0
+	[ -n "$streak" ] || streak=0
+
+	# "you called me a retard 4x and a rat 1x", listing only the words used.
+	# Only the counts carry colour; the prose around them stays out of the way.
+	# One entry is held back so the last one can be joined with "and" rather
+	# than a comma.
+	names=""
+	last=""
+	total=0
+	shown=0
+	field=2
+	while IFS='=' read -r label _; do
+		[ -n "$label" ] || continue
+		field=$((field + 1))
+		n=$(printf '%s' "$scan" | cut -f"$field")
+		[ -n "$n" ] || n=0
+		if [ "$n" -gt 0 ]; then
+			total=$((total + n))
+			shown=$((shown + 1))
+			article=${label%% *}
+			word=${label#* }
+			entry="${C_DIM}${article}${C_OFF} $(heat $((n * 100 / TALLY_FULL)))${word} ${n}x${C_OFF}"
+			if [ -n "$last" ]; then
+				names="${names:+${names}${C_DIM},${C_OFF} }${last}"
+			fi
+			last="$entry"
+		fi
+	done <<EOF
+$TALLY_WORDS
+EOF
+
+	# Two items get a bare "and", three or more keep the serial comma.
+	if [ "$shown" -ge 3 ]; then
+		names="${names}${C_DIM}, and${C_OFF} ${last}"
+	elif [ "$shown" -eq 2 ]; then
+		names="${names}${C_DIM} and${C_OFF} ${last}"
+	else
+		names="$last"
+	fi
+
+	if [ -n "$names" ]; then
+		tally="${C_DIM}${TALLY_PREFIX}${C_OFF} ${names}"
+
+		if [ "$streak" -ge "$TALLY_STREAK_MIN" ]; then
+			tally="${tally}${C_DIM} · streak${C_OFF} $(heat $((streak * 100 / TALLY_STREAK_FULL)))${streak}${C_OFF}"
+		fi
+
+		# Flames lead the row, one per multiple of the average threshold.
+		if [ "$msgs" -gt 0 ]; then
+			n=$(((total * 10 / msgs) / TALLY_FLAME_AT))
+			[ "$n" -gt "$TALLY_FLAME_MAX" ] && n=$TALLY_FLAME_MAX
+			flames=""
+			while [ "$n" -gt 0 ]; do
+				flames="${flames}🔥"
+				n=$((n - 1))
+			done
+			[ -n "$flames" ] && tally="${flames} ${tally}"
+		fi
+	fi
+fi
+
 if [ "$session" -ge 0 ]; then
 	# Label the window by what is left of it, falling back to its nominal
 	# length when the reset time is not reported.
@@ -172,3 +318,6 @@ if [ -n "$location" ]; then
 	printf '%b\n' "$location"
 fi
 printf '%b\n' "$meters"
+if [ -n "$tally" ]; then
+	printf '%b\n' "$tally"
+fi
