@@ -494,18 +494,37 @@ if [ -n "$transcript" ] && [ -f "$transcript" ]; then
 	# Only the counts carry colour; the prose around them stays out of the way.
 	# One entry is held back so the last one can be joined with "and" rather
 	# than a comma.
+	# Biggest first, so the row is a standing on its own and a count overtaking
+	# another visibly reorders it. The original position breaks ties, keeping
+	# equal counts in the order TALLY_WORDS lists them.
+	ordered=$(
+		place=0
+		while IFS='=' read -r label _; do
+			[ -n "$label" ] || continue
+			place=$((place + 1))
+			n=${1:-0}
+			right=${2:--1}
+			[ $# -gt 0 ] && shift
+			[ $# -gt 0 ] && shift
+			# An if, not an && list: a false test as the loop's last command
+			# would fail the whole substitution under set -e.
+			if [ "$n" -gt 0 ]; then
+				printf '%s\t%s\t%s\t%s\n' "$n" "$place" "$right" "$label"
+			fi
+		done <<EOF
+$TALLY_WORDS
+EOF
+	)
+	ordered=$(printf '%s\n' "$ordered" | grep . | sort -t"$(printf '\t')" -k1,1rn -k2,2n)
+
 	names=""
 	last=""
 	seen=0
 	lseen=0
 	mseen=0
 	fseen=0
-	while IFS='=' read -r label _; do
+	while IFS="$(printf '\t')" read -r n place right label; do
 		[ -n "$label" ] || continue
-		n=${1:-0}
-		right=${2:--1}
-		[ $# -gt 0 ] && shift
-		[ $# -gt 0 ] && shift
 		if [ "$n" -gt 0 ]; then
 			seen=$((seen + 1))
 			article=${label%% *}
@@ -572,7 +591,7 @@ if [ -n "$transcript" ] && [ -f "$transcript" ]; then
 			last="$entry"
 		fi
 	done <<EOF
-$TALLY_WORDS
+$ordered
 EOF
 
 	# Two items get a bare "and", three or more keep the serial comma.
