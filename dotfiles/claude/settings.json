@@ -2,6 +2,7 @@
   "model": "opus[1m]",
   "effortLevel": "high",
   "editorMode": "vim",
+  "outputStyle": "Attention-kind",
   "statusLine": {
     "type": "command",
     "command": "~/.claude/statusline.sh",
