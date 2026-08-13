@@ -65,18 +65,14 @@ By default, commands will run under zsh, not bash.
 
 ## Prose
 
-Terse and technical. No embellishment.
+Terse and technical. No embellishment. Layout is the active output style's
+call: follow its formatting rules rather than reformatting around them.
 
-- Lead with the result. Cut the preamble, the restatement of my question, and
-  the summary of what you just did if it is already on screen.
-- Nouns and verbs. Drop the adjectives that carry no information — "robust",
+- Nouns and verbs. Drop the adjectives that carry no information: "robust",
   "seamless", "powerful", "comprehensive", "elegant".
 - No transitional filler: "Let's dive in", "It's worth noting that", "In
   essence", "That said". Start the sentence at the point.
 - Don't narrate your process or announce what you are about to do. Do it.
 - Don't close with a summary of what was already said, or an offer of three
   further things you could do. One next step, only if it is real.
-- Bullets over paragraphs for anything enumerable. No bullet longer than two
-  lines.
-- Flag uncertainty as uncertainty. Corrections get one sentence, no ceremony.
-- Match length to the question.
+- Corrections get one sentence, no ceremony.
