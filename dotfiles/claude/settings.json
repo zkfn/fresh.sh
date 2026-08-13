@@ -1,6 +1,6 @@
 {
   "model": "opus[1m]",
-  "effortLevel": "high",
+  "effortLevel": "xhigh",
   "editorMode": "vim",
   "outputStyle": "Attention-kind",
   "statusLine": {
@@ -20,5 +20,6 @@
   "theme": "custom:gruvbox-material",
   "autoCompactEnabled": false,
   "agentPushNotifEnabled": true,
+  "enableWorkflows": true,
   "skipWorkflowUsageWarning": true
 }
