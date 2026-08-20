@@ -15,6 +15,8 @@ vim.pack.add({
 local cmp = require("cmp")
 local cmp_autopairs = require("nvim-autopairs.completion.cmp")
 local helpers = require("helpers")
+local project = require("project")
+local lsputil = require("lspconfig.util")
 local Snacks = require("snacks")
 local wk = require("which-key")
 
@@ -25,7 +27,79 @@ vim.lsp.config("hls", {
   cmd = { "haskell-language-server-wrapper", "--lsp" },
   filetypes = { "haskell", "lhaskell", "cabal" },
 })
-vim.lsp.enable("hls")
+
+-- tailwindcss lists `.git` as a root marker (a fallback for v4, where
+-- tailwind.config.* is optional) and claims `markdown` as a filetype, so it
+-- starts in *every* git repo the moment you open a README. Require a real
+-- config file or a tailwindcss dependency in package.json instead — v4 repos
+-- still carry the dep, so they keep working.
+vim.lsp.config("tailwindcss", {
+  root_dir = function(bufnr, on_dir)
+    local fname = vim.api.nvim_buf_get_name(bufnr)
+    local root_files = lsputil.insert_package_json({
+      "tailwind.config.js",
+      "tailwind.config.cjs",
+      "tailwind.config.mjs",
+      "tailwind.config.ts",
+      "postcss.config.js",
+      "postcss.config.cjs",
+      "postcss.config.mjs",
+      "postcss.config.ts",
+    }, "tailwindcss", fname)
+    local found = vim.fs.find(root_files, { path = fname, upward = true, type = "file", limit = 1 })[1]
+    if found then
+      on_dir(vim.fs.dirname(found))
+    end
+  end,
+})
+
+--- Wrap a server's root resolution so a repo can veto it from its .nvim.lua.
+--- Returning without calling on_dir() means the server is never spawned, so
+--- the veto costs nothing — unlike stopping the client after it attaches.
+local function gate(name)
+  local cfg = vim.lsp.config[name] or {}
+  local base_root_dir, base_markers = cfg.root_dir, cfg.root_markers
+
+  vim.lsp.config(name, {
+    root_dir = function(bufnr, on_dir)
+      if project.lsp_off(name) then
+        return
+      end
+      if type(base_root_dir) == "function" then
+        return base_root_dir(bufnr, on_dir)
+      end
+      if base_root_dir ~= nil then
+        return on_dir(base_root_dir)
+      end
+      on_dir(base_markers and vim.fs.root(bufnr, base_markers) or nil)
+    end,
+  })
+end
+
+-- Enabled explicitly. Mason installing a server is not a reason to run it.
+-- Each of these still gates itself on root markers, so opening one .ts file
+-- does not drag in the servers whose config files the repo does not have.
+local servers = {
+  "lua_ls",
+  "ts_ls",
+  "biome",
+  "eslint",
+  "tailwindcss",
+  "html",
+  "cssls",
+  "jsonls",
+  "yamlls",
+  "pyright",
+  "gopls",
+  "rust_analyzer",
+  "bashls",
+  "prismals",
+  "tinymist",
+  "hls",
+}
+
+vim.iter(servers):each(gate)
+vim.lsp.enable(servers)
 
 wk.add({
   {
@@ -142,12 +216,10 @@ cmp.setup({
 
 local lint = require("lint")
 
+-- JS/TS eslint is handled by the eslint LSP, which already finds the repo's
+-- config, reuses one process per project and gives code actions. Running
+-- eslint_d here as well meant two eslint engines per buffer.
 lint.linters_by_ft = {
-  javascript = { "eslint_d" },
-  javascriptreact = { "eslint_d" },
-  typescript = { "eslint_d" },
-  typescriptreact = { "eslint_d" },
-  svelte = { "eslint_d" },
   -- go = { "golangcilint" },
 }
 
@@ -157,24 +229,38 @@ end
 
 local lint_augroup = vim.api.nvim_create_augroup("lint", { clear = true })
 
--- hook into BufEnter
-vim.api.nvim_create_autocmd({ "BufEnter", "BufWritePost" }, {
+-- BufEnter fired a lint run on every buffer switch, including switching back
+-- to a buffer that had not changed.
+vim.api.nvim_create_autocmd({ "BufWritePost" }, {
   group = lint_augroup,
   callback = run_linter,
 })
 
 wk.add({ { "<leader>;;", run_linter, desc = "[L]int", mode = "n" } })
 
+-- Exactly one formatter per repo. prettier and biome-organize-imports both
+-- rewriting the same file meant every save flipped quote style and import
+-- order back and forth. Repo picks via biome.json, or vim.g.js_formatter.
+local function web(bufnr)
+  local pick = project.js_formatter(bufnr)
+  if pick == "none" then
+    return {}
+  elseif pick == "biome" then
+    return { "biome-check" }
+  end
+  return { "prettier" }
+end
+
 require("conform").setup({
   formatters_by_ft = {
-    javascript = { "prettier", "biome-organize-imports" },
-    typescript = { "prettier", "biome-organize-imports" },
-    javascriptreact = { "prettier", "biome-organize-imports" },
-    typescriptreact = { "prettier", "biome-organize-imports" },
-    json = { "prettier" },
-    jsonc = { "prettier" },
+    javascript = web,
+    typescript = web,
+    javascriptreact = web,
+    typescriptreact = web,
+    json = web,
+    jsonc = web,
     svelte = { "prettier" },
-    css = { "prettier" },
+    css = web,
     html = { "prettier" },
     yaml = { "prettier" },
     markdown = { "prettier" },
@@ -212,7 +298,9 @@ wk.add({
 
 require("lazydev").setup({ library = { { path = "${3rd}/luv/library", words = { "vim%.uv" } } } })
 require("mason").setup()
-require("mason-lspconfig").setup()
+-- automatic_enable defaults to true, which calls vim.lsp.enable() on all 22
+-- installed packages. Enabling is done by hand above.
+require("mason-lspconfig").setup({ automatic_enable = false })
 require("mason-tool-installer").setup({
   ensure_installed = {
     "lua_ls",

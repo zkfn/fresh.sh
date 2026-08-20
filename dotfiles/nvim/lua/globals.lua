@@ -28,3 +28,9 @@ vim.o.termguicolors = true
 vim.o.background = "dark"
 
 vim.cmd("colorscheme habamax")
+
+-- Source a repo's own `.nvim.lua` (prompts once per file via :h trust). Lets a
+-- repo switch servers and formatters off for itself:
+--   vim.g.lsp_off = { "tailwindcss" }
+--   vim.g.js_formatter = "prettier"
+vim.o.exrc = true
