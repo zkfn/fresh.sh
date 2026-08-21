@@ -53,6 +53,24 @@ vim.lsp.config("tailwindcss", {
   end,
 })
 
+-- lspconfig accepts *any* package.json containing the string "biomejs" as proof
+-- the repo uses biome, so a leftover `@biomejs/biome` devDependency starts the
+-- server in a repo that formats with prettier. Require a real biome.json — the
+-- same test project.uses() applies to the formatter, so the two cannot disagree.
+vim.lsp.config("biome", {
+  root_dir = function(bufnr, on_dir)
+    if not project.uses("biome", bufnr) then
+      return
+    end
+    -- biome resolves the nearest biome.json itself, so hand it the project root
+    -- and let one server cover the whole monorepo.
+    on_dir(vim.fs.root(bufnr, {
+      { "package-lock.json", "yarn.lock", "pnpm-lock.yaml", "bun.lockb", "bun.lock" },
+      { ".git" },
+    }) or vim.fn.getcwd())
+  end,
+})
+
 --- Wrap a server's root resolution so a repo can veto it from its .nvim.lua.
 --- Returning without calling on_dir() means the server is never spawned, so
 --- the veto costs nothing — unlike stopping the client after it attaches.
