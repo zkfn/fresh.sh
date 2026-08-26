@@ -23,7 +23,15 @@ vim.g.mkdp_refresh_slow = 0
 -- Don't auto-close the browser tab when leaving a markdown buffer.
 vim.g.mkdp_auto_close = 0
 
-require("render-markdown").setup({})
+-- Both this and snacks.image want to own a fenced code block. render-markdown
+-- paints the language pill and border onto the fence lines, which is exactly
+-- where snacks anchors the rendered diagram, so the image only surfaced when
+-- anti-conceal stripped those marks off the cursor's row. Hand mermaid blocks
+-- to snacks and leave every other block, and all the table and heading
+-- rendering, alone.
+require("render-markdown").setup({
+  code = { disable = { "mermaid" } },
+})
 
 local collect = function(from)
   local names = {}

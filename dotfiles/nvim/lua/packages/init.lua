@@ -215,7 +215,23 @@ require("snacks").setup({
   -- terminal that speaks it) plus `allow-passthrough on` in tmux.conf, and
   -- ImageMagick to convert anything that is not already a PNG. Mermaid blocks
   -- additionally shell out to `mmdc` (@mermaid-js/mermaid-cli).
-  image = { enabled = true },
+  image = {
+    enabled = true,
+    doc = {
+      -- Both are terminal cells, not pixels. Defaults are 80x40; 40 rows of a
+      -- 64 row pane means a tall diagram runs off the bottom and fights the
+      -- scroll, since tmux cannot reposition pixels it does not track.
+      max_width = 120,
+      max_height = 30,
+      -- Default conceals math only, which left the mermaid source stacked on
+      -- top of its own rendered diagram. Charts hide their source the same way
+      -- now; moving the cursor into the block swaps the image back for the
+      -- text so it stays editable.
+      conceal = function(_, type)
+        return type == "math" or type == "chart"
+      end,
+    },
+  },
 
   indent = { enabled = false },
   statuscolumn = { enabled = false },
