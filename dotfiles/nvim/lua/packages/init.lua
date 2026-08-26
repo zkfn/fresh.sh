@@ -60,66 +60,70 @@ require("ibl").setup()
 
 local treesitter = require("nvim-treesitter")
 
+-- setup() on the main branch takes exactly one option, install_dir. `indent`,
+-- `highlight`, `folds` and `ensure_installed` are master-branch spellings; the
+-- rewrite folds them into the config table and never reads them again, so they
+-- looked like they worked while installing nothing. Parsers now come from
+-- install() below, and highlight/indent from the FileType autocmd.
 treesitter.setup({
   install_dir = vim.fn.stdpath("data") .. "/site",
-  indent = { enable = true },
-  highlight = { enable = true },
-  folds = { enable = true },
-  ensure_installed = {
-    "c",
-    "lua",
-    "vim",
-    "diff",
-    "vimdoc",
-    "markdown",
-    "markdown_inline",
-    "tsx",
-    "python",
-    "go",
-    "typescript",
-    "javascript",
-    "lua",
-    "json",
-    "html",
-    "css",
-    "go",
-  },
 })
 
-local ts_ft = {
-  javascriptreact = true,
-  typescriptreact = true,
-  lua = true,
-  python = true,
-  javascript = true,
-  typescript = true,
-  prisma = true,
-  tsx = true,
-  jsx = true,
-  html = true,
-  css = true,
-  json = true,
-  yaml = true,
-  bash = true,
-  diff = true,
-  c = true,
-  cpp = true,
-  vim = true,
-  vimdoc = true,
-  markdown = true,
-  go = true,
-  haskell = true,
-}
+-- One language per thing actually edited here: the filetypes with an ftplugin,
+-- the ones with an LSP server in lsp.lua, and latex + typst, which snacks.image
+-- needs to find math and diagrams in a document.
+--
+-- install() is async and a no-op for parsers already present, so this is cheap
+-- on every start but leaves the first one after adding a language downloading
+-- in the background. :checkhealth nvim-treesitter shows what landed.
+treesitter.install({
+  -- editor and plumbing
+  "c",
+  "cpp",
+  "lua",
+  "vim",
+  "vimdoc",
+  "diff",
+  "query",
+  "kitty",
+  -- prose and markup
+  "markdown",
+  "markdown_inline",
+  "latex",
+  "typst",
+  "html",
+  "css",
+  "json",
+  "yaml",
+  "toml",
+  -- code
+  "javascript",
+  "typescript",
+  "tsx",
+  "python",
+  "go",
+  "rust",
+  "bash",
+  "haskell",
+  "prisma",
+  "proto",
+})
 
+-- Enable for any buffer whose language has a parser on disk, rather than
+-- against a hand-kept filetype allowlist. The old list had drifted from the
+-- install list in both directions: `diff` was installed but never enabled,
+-- while `haskell`, `yaml`, `bash` and `cpp` were enabled with no parser to back
+-- them, and the indentexpr below was set anyway — a treesitter indentexpr with
+-- no tree behind it, which indents worse than the built-in rules it replaced.
 vim.api.nvim_create_autocmd("FileType", {
-  desc = "Enable built-in Tree-sitter highlight and indent for selected filetypes",
+  desc = "Enable built-in Tree-sitter highlight and indent where a parser exists",
   callback = function(ev)
-    local ft = vim.bo[ev.buf].filetype
-    if not ts_ft[ft] then
+    local lang = vim.treesitter.language.get_lang(vim.bo[ev.buf].filetype)
+    if not lang or not vim.treesitter.language.add(lang) then
       return
     end
 
-    pcall(vim.treesitter.start, ev.buf)
+    vim.treesitter.start(ev.buf, lang)
 
     if vim.treesitter.indentexpr then
       vim.bo[ev.buf].indentexpr = "v:lua.vim.treesitter.indentexpr()"
