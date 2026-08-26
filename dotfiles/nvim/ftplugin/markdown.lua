@@ -1,5 +1,5 @@
-vim.wo.wrap = true
-vim.wo.linebreak = true
+vim.wo[0][0].wrap = true
+vim.wo[0][0].linebreak = true
 vim.bo.textwidth = 80
 
 local opts = { buffer = true, silent = true }
