@@ -4,3 +4,5 @@ fresh.tar.gz
 .tmp/
 .env
 
+__pycache__/
+*.pyc
