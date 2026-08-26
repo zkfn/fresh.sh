@@ -1,8 +1,6 @@
 {
   "model": "opus[1m]",
-  "effortLevel": "xhigh",
-  "editorMode": "vim",
-  "outputStyle": "Attention-kind",
+  "enableWorkflows": true,
   "statusLine": {
     "type": "command",
     "command": "~/.claude/statusline.sh",
@@ -14,12 +12,15 @@
     "clangd-lsp@claude-plugins-official": true,
     "pyright-lsp@claude-plugins-official": true,
     "rust-analyzer-lsp@claude-plugins-official": true,
-    "lua-lsp@claude-plugins-official": true
+    "lua-lsp@claude-plugins-official": true,
+    "telegram@claude-plugins-official": true
   },
+  "outputStyle": "Attention-kind",
+  "effortLevel": "xhigh",
   "tui": "fullscreen",
+  "skipWorkflowUsageWarning": true,
   "theme": "custom:gruvbox-material",
+  "editorMode": "vim",
   "autoCompactEnabled": false,
-  "agentPushNotifEnabled": true,
-  "enableWorkflows": true,
-  "skipWorkflowUsageWarning": true
+  "agentPushNotifEnabled": true
 }
