@@ -112,7 +112,7 @@ local ts_ft = {
 }
 
 vim.api.nvim_create_autocmd("FileType", {
-  desc = "Enable built-in Tree-sitter highlight/folds/indent for selected filetypes",
+  desc = "Enable built-in Tree-sitter highlight and indent for selected filetypes",
   callback = function(ev)
     local ft = vim.bo[ev.buf].filetype
     if not ts_ft[ft] then
