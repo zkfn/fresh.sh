@@ -206,6 +206,13 @@ require("snacks").setup({
   bufdelete = { enabled = true },
   scratch = { enabled = true },
 
+  -- Inline images, mermaid diagrams and latex math in markdown/typst buffers.
+  -- Draws with the kitty graphics protocol, so it needs kitty (or another
+  -- terminal that speaks it) plus `allow-passthrough on` in tmux.conf, and
+  -- ImageMagick to convert anything that is not already a PNG. Mermaid blocks
+  -- additionally shell out to `mmdc` (@mermaid-js/mermaid-cli).
+  image = { enabled = true },
+
   indent = { enabled = false },
   statuscolumn = { enabled = false },
 })
