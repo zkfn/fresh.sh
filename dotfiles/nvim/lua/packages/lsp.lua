@@ -28,81 +28,68 @@ vim.lsp.config("hls", {
   filetypes = { "haskell", "lhaskell", "cabal" },
 })
 
--- tailwindcss lists `.git` as a root marker (a fallback for v4, where
--- tailwind.config.* is optional) and claims `markdown` as a filetype, so it
--- starts in *every* git repo the moment you open a README. Require a real
--- config file or a tailwindcss dependency in package.json instead — v4 repos
--- still carry the dep, so they keep working.
-vim.lsp.config("tailwindcss", {
-  root_dir = function(bufnr, on_dir)
+-- Two `root` strategies and two `when` vetoes, used by the server table below.
+
+--- Root at the directory of the nearest `files` entry above the buffer, and do
+--- not start where there is none. `dep` also accepts a package.json naming it.
+---@param files string[]
+---@param dep string|nil
+local function nearest(files, dep)
+  return function(bufnr, on_dir)
     local fname = vim.api.nvim_buf_get_name(bufnr)
-    local root_files = lsputil.insert_package_json({
-      "tailwind.config.js",
-      "tailwind.config.cjs",
-      "tailwind.config.mjs",
-      "tailwind.config.ts",
-      "postcss.config.js",
-      "postcss.config.cjs",
-      "postcss.config.mjs",
-      "postcss.config.ts",
-    }, "tailwindcss", fname)
-    local found = vim.fs.find(root_files, { path = fname, upward = true, type = "file", limit = 1 })[1]
+    -- insert_package_json appends to the list it is handed, so hand it a copy.
+    -- Sharing one list across calls meant the first repo whose package.json
+    -- named `dep` left "package.json" in it, and every repo opened afterwards
+    -- matched on merely having one.
+    local markers = vim.list_extend({}, files)
+    if dep then
+      markers = lsputil.insert_package_json(markers, dep, fname)
+    end
+    local found = vim.fs.find(markers, { path = fname, upward = true, type = "file", limit = 1 })[1]
     if found then
       on_dir(vim.fs.dirname(found))
     end
-  end,
-})
-
--- lspconfig accepts *any* package.json containing the string "biomejs" as proof
--- the repo uses biome, so a leftover `@biomejs/biome` devDependency starts the
--- server in a repo that formats with prettier. Require a real biome.json — the
--- same test project.uses() applies to the formatter, so the two cannot disagree.
-vim.lsp.config("biome", {
-  root_dir = function(bufnr, on_dir)
-    if not project.uses("biome", bufnr) then
-      return
-    end
-    -- biome resolves the nearest biome.json itself, so hand it the project root
-    -- and let one server cover the whole monorepo.
-    on_dir(vim.fs.root(bufnr, {
-      { "package-lock.json", "yarn.lock", "pnpm-lock.yaml", "bun.lockb", "bun.lock" },
-      { ".git" },
-    }) or vim.fn.getcwd())
-  end,
-})
-
---- Wrap a server's root resolution so a repo can veto it from its .nvim.lua.
---- Returning without calling on_dir() means the server is never spawned, so
---- the veto costs nothing — unlike stopping the client after it attaches.
-local function gate(name)
-  local cfg = vim.lsp.config[name] or {}
-  local base_root_dir, base_markers = cfg.root_dir, cfg.root_markers
-
-  vim.lsp.config(name, {
-    root_dir = function(bufnr, on_dir)
-      if project.lsp_off(name) then
-        return
-      end
-      if type(base_root_dir) == "function" then
-        return base_root_dir(bufnr, on_dir)
-      end
-      if base_root_dir ~= nil then
-        return on_dir(base_root_dir)
-      end
-      on_dir(base_markers and vim.fs.root(bufnr, base_markers) or nil)
-    end,
-  })
+  end
 end
 
--- Enabled explicitly. Mason installing a server is not a reason to run it.
--- Each of these still gates itself on root markers, so opening one .ts file
--- does not drag in the servers whose config files the repo does not have.
+--- Root at the project, so one server covers a whole monorepo.
+local function repo_root(bufnr, on_dir)
+  on_dir(vim.fs.root(bufnr, {
+    { "package-lock.json", "yarn.lock", "pnpm-lock.yaml", "bun.lockb", "bun.lock" },
+    { ".git" },
+  }) or vim.fn.getcwd())
+end
+
+--- Only where the repo really configures `tool`, by a config file rather than
+--- by a dependency left behind in package.json.
+local function uses(tool)
+  return function(bufnr)
+    return project.uses(tool, bufnr)
+  end
+end
+
+--- Only where `name` is the repo's JS/TS linter. See project.js_linter().
+local function linting_with(name)
+  return function(bufnr)
+    local pick = project.js_linter(bufnr)
+    return pick == name or pick == "both"
+  end
+end
+
+-- The one place that decides which servers run and where they root. Mason
+-- installing a server is not a reason to run it, so nothing starts unless it is
+-- listed, and a listed server still has to find its own config files. An entry
+-- is a bare name unless it needs:
+--
+--   when = an extra veto, asked per buffer. Failing it means the server is
+--          never spawned, which costs nothing — unlike stopping a client that
+--          has already attached.
+--   root = replaces nvim-lspconfig's root resolution, whole.
+--
+-- A repo switches any of them off in its .nvim.lua: vim.g.lsp_off = { "eslint" }
 local servers = {
   "lua_ls",
   "ts_ls",
-  "biome",
-  "eslint",
-  "tailwindcss",
   "html",
   "cssls",
   "jsonls",
@@ -114,10 +101,68 @@ local servers = {
   "prismals",
   "tinymist",
   "hls",
+
+  -- lspconfig accepts *any* package.json containing the string "biomejs" as
+  -- proof the repo uses biome, so a leftover `@biomejs/biome` devDependency
+  -- starts the server in a repo that formats with prettier. The biome.json test
+  -- is the one conform uses to pick the formatter, so the two cannot disagree.
+  -- biome finds the nearest biome.json itself, hence one server per repo.
+  { "biome", when = uses("biome"), root = repo_root },
+
+  -- Exactly one JS/TS linter per repo, the rule the formatter already follows.
+  -- Both servers accept a bare package.json mentioning their name as proof, so
+  -- a repo carrying both configs started both and reported every shared rule
+  -- twice.
+  { "eslint", when = linting_with("eslint") },
+  { "oxlint", when = linting_with("oxlint") },
+
+  -- tailwindcss lists `.git` as a root marker (a fallback for v4, where
+  -- tailwind.config.* is optional) and claims `markdown` as a filetype, so it
+  -- starts in *every* git repo the moment you open a README. Require a real
+  -- config file or a tailwindcss dependency in package.json instead — v4 repos
+  -- still carry the dep, so they keep working.
+  {
+    "tailwindcss",
+    root = nearest({
+      "tailwind.config.js",
+      "tailwind.config.cjs",
+      "tailwind.config.mjs",
+      "tailwind.config.ts",
+      "postcss.config.js",
+      "postcss.config.cjs",
+      "postcss.config.mjs",
+      "postcss.config.ts",
+    }, "tailwindcss"),
+  },
 }
 
-vim.iter(servers):each(gate)
-vim.lsp.enable(servers)
+local enabled = {}
+
+for _, entry in ipairs(servers) do
+  local server = type(entry) == "string" and { entry } or entry
+  local name, when = server[1], server.when
+  local base = vim.lsp.config[name] or {}
+  local root, markers = server.root or base.root_dir, base.root_markers
+
+  vim.lsp.config(name, {
+    root_dir = function(bufnr, on_dir)
+      if project.lsp_off(name) or (when and not when(bufnr)) then
+        return
+      end
+      if type(root) == "function" then
+        return root(bufnr, on_dir)
+      end
+      if root ~= nil then
+        return on_dir(root)
+      end
+      on_dir(markers and vim.fs.root(bufnr, markers) or nil)
+    end,
+  })
+
+  enabled[#enabled + 1] = name
+end
+
+vim.lsp.enable(enabled)
 
 wk.add({
   {
@@ -234,9 +279,9 @@ cmp.setup({
 
 local lint = require("lint")
 
--- JS/TS eslint is handled by the eslint LSP, which already finds the repo's
--- config, reuses one process per project and gives code actions. Running
--- eslint_d here as well meant two eslint engines per buffer.
+-- JS/TS linting is handled by the eslint and oxlint LSP servers, which already
+-- find the repo's config, reuse one process per project and give code actions.
+-- Running eslint_d here as well meant two eslint engines per buffer.
 lint.linters_by_ft = {
   -- go = { "golangcilint" },
 }
@@ -331,5 +376,9 @@ require("mason-tool-installer").setup({
     "pyright",
     "black",
     "prettier",
+    -- Unlike eslint, oxlint is often used without being a repo dependency, and
+    -- the LSP prefers node_modules/.bin/oxlint anyway. Without a copy on PATH
+    -- the server just never starts, with no error to explain why.
+    "oxlint",
   },
 })
