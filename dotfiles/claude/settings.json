@@ -15,20 +15,6 @@
     "lua-lsp@claude-plugins-official": true,
     "telegram@claude-plugins-official": true
   },
-  "hooks": {
-    "PreToolUse": [
-      {
-        "matcher": "Bash",
-        "hooks": [
-          {
-            "type": "command",
-            "command": "~/.claude/hooks/regex-replace-guard.sh",
-            "timeout": 10
-          }
-        ]
-      }
-    ]
-  },
   "outputStyle": "Attention-kind",
   "effortLevel": "xhigh",
   "tui": "fullscreen",
