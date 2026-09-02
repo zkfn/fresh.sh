@@ -4,7 +4,7 @@ Read this when you run `ledger.py start <id>`. It is separate from SKILL.md so i
 isn't occupying context during orchestration.
 
 ```mermaid
-flowchart TD
+flowchart LR
     A([start unit]) --> SURVEY["survey<br/>read the controller + its service, DTOs, tests<br/>read ledger findings first"]
     SURVEY --> PLAN["plan<br/>list intended changes BEFORE editing<br/>anything out of scope becomes an issue, not an edit"]
     PLAN --> SCOPE{"scope creep?<br/>touching files outside<br/>the unit's declared set"}

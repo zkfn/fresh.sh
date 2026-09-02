@@ -231,6 +231,25 @@ require("snacks").setup({
         return type == "math" or type == "chart"
       end,
     },
+    convert = {
+      -- mermaid lays out at 16px and a wide graph then gets scaled down to fit
+      -- the buffer, so the labels land somewhere unreadable. Rendering at 28px
+      -- makes the diagram taller for the same width, which is the same thing as
+      -- making the text bigger relative to it: ~1.75x on screen, for four extra
+      -- rows. mermaid.json carries that plus a little more node spacing so the
+      -- larger labels do not collide.
+      mermaid = function()
+        local theme = vim.o.background == "light" and "neutral" or "dark"
+        return {
+          "-i", "{src}",
+          "-o", "{file}",
+          "-b", "transparent",
+          "-t", theme,
+          "-s", "{scale}",
+          "-c", vim.fn.stdpath("config") .. "/mermaid.json",
+        }
+      end,
+    },
   },
 
   indent = { enabled = false },

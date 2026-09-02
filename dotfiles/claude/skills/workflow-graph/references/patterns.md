@@ -7,7 +7,7 @@ Copy the mermaid, adapt the labels. Don't invent a topology.
 Two nested graphs. Outer runs across sessions; inner processes one unit.
 
 ```mermaid
-flowchart TD
+flowchart LR
     S([session start]) --> LOAD["ledger status<br/>read state from disk"]
     LOAD --> HOT["ledger hot<br/>files locked by open PRs"]
     HOT --> BUDGET{"est. cost vs<br/>remaining context"}
@@ -28,7 +28,7 @@ Inner loop: see `unit-workflow.md`.
 Only when file ownership is provably disjoint. Verify that before drawing it.
 
 ```mermaid
-flowchart TD
+flowchart LR
     P["plan: manifest with owned files"] --> C{"file sets disjoint?"}
     C -->|no| P
     C -->|yes| F[["worktree per task"]]
