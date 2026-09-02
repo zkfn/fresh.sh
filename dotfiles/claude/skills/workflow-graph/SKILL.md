@@ -28,6 +28,15 @@ wrote: /home/you/repo/docs/workflows/api-cleanup.md
 Do not ask "would you like me to make a diagram" — write the file and print the
 path. It costs nothing and it's the whole point of working this way.
 
+**Draw `flowchart LR`, not `TD`.** The renderer scales a diagram to fit both the
+width and the height it is given, and height binds first on a terminal, which is
+wide and short. A top-down chain of ~20 nodes comes out around three times taller
+than it is wide; fitting that into a pane shrinks it to roughly a fifth of the
+width available, and no height setting recovers it — the graph would need more
+rows than the screen has. The same graph as `LR` is short and wide and fills the
+pane. Use `TD` only for something genuinely broader than it is deep, and reach
+for `direction TB` inside a `subgraph` when one cluster reads better stacked.
+
 ## Three modes
 
 Figure out which one the user is in and say which you're doing.

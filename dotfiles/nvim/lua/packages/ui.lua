@@ -1,27 +1,40 @@
--- markdown-preview.nvim ships a server binary that must be downloaded after the
--- plugin is installed/updated. vim.pack doesn't run build hooks, so do it here.
--- Registered before vim.pack.add so it also catches the very first install.
-vim.api.nvim_create_autocmd("PackChanged", {
-  callback = function(ev)
-    if ev.data.spec.name == "markdown-preview.nvim" and ev.data.kind ~= "delete" then
-      vim.fn["mkdp#util#install"]()
-    end
-  end,
-})
-
 vim.pack.add({
   "https://github.com/nvim-lualine/lualine.nvim",
   "https://github.com/nvim-mini/mini.nvim",
   "https://github.com/MeanderingProgrammer/render-markdown.nvim",
   { src = "https://github.com/akinsho/bufferline.nvim", tag = "*" },
-  -- Live markdown preview in the browser: :MarkdownPreview / :MarkdownPreviewStop
-  "https://github.com/iamcco/markdown-preview.nvim",
+
+  -- Live markdown preview in the browser: :MarkdownPreview / :MarkdownPreviewStop.
+  -- Replaces iamcco/markdown-preview.nvim, which has had no commit since October
+  -- 2023 and bundles mermaid 10.2.3 — old enough to throw "Syntax error in text"
+  -- on graphs that mermaid 11 renders fine, with no upstream left to fix it.
+  -- This one draws mermaid as interactive SVG: expand to fullscreen, zoom, pan,
+  -- export. It is also pure Lua over its own HTTP server, so the binary download
+  -- the old plugin needed after every update is gone with it.
+  "https://github.com/selimacerbas/live-server.nvim",
+  "https://github.com/selimacerbas/markdown-preview.nvim",
 })
 
--- Refresh the preview live as you type (default only refreshes on save/leave).
-vim.g.mkdp_refresh_slow = 0
--- Don't auto-close the browser tab when leaving a markdown buffer.
-vim.g.mkdp_auto_close = 0
+require("markdown_preview").setup({
+  default_theme = "dark",
+  open_browser = true,
+  scroll_sync = true,
+})
+
+-- :md — preview the current buffer in the browser. Inline rendering is fine for
+-- a glance, but a dense diagram needs real pixels and a zoom, so this is the
+-- way out of squinting at a downscaled png.
+vim.api.nvim_create_user_command("Md", function()
+  if vim.bo.filetype ~= "markdown" then
+    vim.notify("Not a markdown buffer (ft=" .. vim.bo.filetype .. ")", vim.log.levels.WARN)
+    return
+  end
+  vim.cmd("MarkdownPreview")
+end, { desc = "Preview this markdown buffer in the browser" })
+-- User commands must start with a capital, so `md` is a command-line abbrev.
+-- Guarded on the whole line being exactly "md": a bare `cnoreabbrev md Md`
+-- expands anywhere on the line, which quietly turns `:e md.txt` into `:e Md.txt`.
+vim.cmd([[cnoreabbrev <expr> md (getcmdtype() == ':' && getcmdline() ==# 'md') ? 'Md' : 'md']])
 
 -- Both this and snacks.image want to own a fenced code block. render-markdown
 -- paints the language pill and border onto the fence lines, which is exactly
